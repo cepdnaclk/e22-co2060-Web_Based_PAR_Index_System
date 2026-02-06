@@ -65,8 +65,12 @@ We are developing a **web-based software platform** that automates the PAR calcu
     {
       "name": "Dr. Asitha Bandaranayake",
       "email": "asithab@eng.pdn.ac.lk"
-    },
-    
+    }
   ],
-  "tags": ["BioInformatics", "Machine Learning", "Web Systems", "CO2060"]
+  "tags": [
+    "BioInformatics",
+    "Machine Learning",
+    "Web Systems",
+    "CO2060"
+  ]
 }
