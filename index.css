@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+:root {
+  --sidebar-width: 60px;
+  --primary: #2563EB;
+  --sidebar-bg: #1E293B;
+}
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+}
+/* Scrollbar styling for the professional feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+/* Tabular numbers for data alignment */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+/* Resize handle cursor */
+.resize-handle {
+  cursor: col-resize;
+  user-select: none;
+}
+/* Pulse animation for active step */
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0); }
+}
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
