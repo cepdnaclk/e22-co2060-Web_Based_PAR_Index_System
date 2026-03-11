@@ -6,6 +6,8 @@ import { PatientList } from './components/PatientList'
 import { Dashboard } from './components/Dashboard'
 import { PatientWorkspace } from './components/PatientWorkspace'
 import { RegisterPatient } from './components/RegisterPatient'
+import { Reports } from './components/Reports'
+import { Settings } from './components/Settings'
 import type { Patient } from './data/mockData'
 type Breakpoint = 'mobile' | 'tablet' | 'desktop'
 function useBreakpoint(): Breakpoint {
@@ -274,42 +276,22 @@ export function App() {
               ) : activeNav === 'reports' ? (
                 <motion.div
                   key="reports"
-                  initial={{
-                    opacity: 0,
-                  }}
-                  animate={{
-                    opacity: 1,
-                  }}
-                  exit={{
-                    opacity: 0,
-                  }}
-                  className="h-full flex items-center justify-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full relative overflow-hidden"
                 >
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-gray-400">Reports</p>
-                    <p className="text-xs text-gray-300 mt-1">Coming soon</p>
-                  </div>
+                  <Reports />
                 </motion.div>
               ) : (
                 <motion.div
                   key="settings"
-                  initial={{
-                    opacity: 0,
-                  }}
-                  animate={{
-                    opacity: 1,
-                  }}
-                  exit={{
-                    opacity: 0,
-                  }}
-                  className="h-full flex items-center justify-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full relative overflow-hidden"
                 >
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-gray-400">
-                      Settings
-                    </p>
-                    <p className="text-xs text-gray-300 mt-1">Coming soon</p>
-                  </div>
+                  <Settings />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -416,50 +398,22 @@ export function App() {
             ) : activeNav === 'reports' ? (
               <motion.div
                 key="reports"
-                initial={{
-                  opacity: 0,
-                }}
-                animate={{
-                  opacity: 1,
-                }}
-                exit={{
-                  opacity: 0,
-                }}
-                className="h-full flex items-center justify-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="h-full relative z-0"
               >
-                <div className="text-center">
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                    <span className="text-gray-400 text-lg">📊</span>
-                  </div>
-                  <p className="text-sm font-medium text-gray-500">Reports</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Generate and view clinical reports
-                  </p>
-                </div>
+                <Reports />
               </motion.div>
             ) : (
               <motion.div
                 key="settings"
-                initial={{
-                  opacity: 0,
-                }}
-                animate={{
-                  opacity: 1,
-                }}
-                exit={{
-                  opacity: 0,
-                }}
-                className="h-full flex items-center justify-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="h-full relative z-0"
               >
-                <div className="text-center">
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                    <span className="text-gray-400 text-lg">⚙️</span>
-                  </div>
-                  <p className="text-sm font-medium text-gray-500">Settings</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Configure your workspace preferences
-                  </p>
-                </div>
+                <Settings />
               </motion.div>
             )}
           </AnimatePresence>
