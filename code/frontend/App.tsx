@@ -285,7 +285,7 @@ export function App() {
                   exit={{
                     opacity: 0,
                   }}
-                  className="h-full"
+                  className="absolute inset-0 overflow-y-auto"
                 >
                   <Reports />
                 </motion.div>
@@ -301,7 +301,7 @@ export function App() {
                   exit={{
                     opacity: 0,
                   }}
-                  className="h-full"
+                  className="absolute inset-0 overflow-y-auto"
                 >
                   <Settings />
                 </motion.div>
@@ -419,7 +419,7 @@ export function App() {
                 exit={{
                   opacity: 0,
                 }}
-                className="h-full"
+                className="absolute inset-0 overflow-y-auto"
               >
                 <Reports />
               </motion.div>
@@ -435,7 +435,7 @@ export function App() {
                 exit={{
                   opacity: 0,
                 }}
-                className="h-full"
+                className="absolute inset-0 overflow-y-auto"
               >
                 <Settings />
               </motion.div>
