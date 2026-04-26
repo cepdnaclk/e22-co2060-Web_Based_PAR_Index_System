@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+
+  # ── MySQL ────────────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: par-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:-rootpass}
+      MYSQL_DATABASE: ${DB_NAME:-par_system}
+      MYSQL_USER: ${DB_USER:-paruser}
+      MYSQL_PASSWORD: ${DB_PASS:-parpass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Spring Boot API ──────────────────────────────────────────────────
+  backend:
+    build: ./backend
+    container_name: par-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-par_system}
+      DB_USER: ${DB_USER:-paruser}
+      DB_PASS: ${DB_PASS:-parpass}
+      JWT_SECRET: ${JWT_SECRET:-ChangeMeToASecureBase64Key32CharsMin}
+      STORAGE_DIR: /app/uploads
+      PORT: 8081
+    ports:
+      - "8081:8081"
+    volumes:
+      - uploads_data:/app/uploads
+
+  # ── React Frontend (production build via nginx) ───────────────────────
+  frontend:
+    build: ./frontend
+    container_name: par-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  mysql_data:
+  uploads_data:
