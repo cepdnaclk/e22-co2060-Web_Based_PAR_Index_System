@@ -30,7 +30,7 @@ public class OrthoCase {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
-    @JsonIgnore
+    @JsonIgnoreProperties({"passwordHash", "authorities", "updatedAt", "hibernateLazyInitializer", "handler"})
     private User createdBy;
 
     @Enumerated(EnumType.STRING)

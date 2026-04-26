@@ -15,17 +15,12 @@ export default function AdminPanel() {
   return (
     <div className="page">
       <h1 style={{ marginBottom: 6 }}>Admin Panel</h1>
-      <p style={{ marginBottom: 24 }}>
-        Manage users, roles, and review undergraduate training submissions.
-      </p>
+      <p style={{ marginBottom: 24 }}>Manage users, roles and view submission statuses.</p>
 
-      <div style={{
-        display: 'flex', gap: 0, marginBottom: 28,
-        borderBottom: '1px solid var(--border)'
-      }}>
+      <div style={{ display: 'flex', gap: 0, marginBottom: 28, borderBottom: '1px solid var(--border)' }}>
         {[
           { key: 'users',    label: '👤 User Management' },
-          { key: 'training', label: '📁 Training Review' },
+          { key: 'training', label: '📁 Submissions Overview' },
           { key: 'audit',    label: '📋 Audit Log' },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
@@ -41,17 +36,18 @@ export default function AdminPanel() {
       </div>
 
       {tab === 'users'    && <UsersTab />}
-      {tab === 'training' && <TrainingTab />}
+      {tab === 'training' && <TrainingOverviewTab />}
       {tab === 'audit'    && <AuditTab />}
     </div>
   )
 }
 
-// ── Users Tab ────────────────────────────────────────────────────────────
+// ── Users Tab ─────────────────────────────────────────────────────────────
 function UsersTab() {
   const [users, setUsers]     = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')
+  const [roleFilter, setRoleFilter] = useState('ALL')
 
   useEffect(() => { load() }, [])
 
@@ -70,32 +66,59 @@ function UsersTab() {
   }
 
   async function changeRole(id, role) {
+    if (role === 'DENTIST') { alert('DENTIST role is no longer supported.'); return }
     try {
       await adminApi.changeRole(id, role)
       setUsers(u => u.map(x => x.id === id ? { ...x, role } : x))
     } catch (err) { alert(err.response?.data?.message || 'Error.') }
   }
 
-  const filtered = users.filter(u =>
+  // Non-admin users only (exclude admins from display)
+  const nonAdmins = users.filter(u => u.role !== 'ADMIN')
+  const orthodontists  = nonAdmins.filter(u => u.role === 'ORTHODONTIST')
+  const undergraduates = nonAdmins.filter(u => u.role === 'UNDERGRADUATE')
+
+  const roleFiltered = roleFilter === 'ALL'
+    ? nonAdmins
+    : nonAdmins.filter(u => u.role === roleFilter)
+
+  const searched = roleFiltered.filter(u =>
     (u.name  ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (u.email ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
   return (
     <>
+      {/* Stats — order: Orthodontists, Undergraduates */}
       <div className="row" style={{ marginBottom: 20 }}>
-        <StatCard value={users.length}                                            label="Total Users"    color="var(--blue-dark)" />
-        <StatCard value={users.filter(u => u.active !== false).length}            label="Active"         color="var(--green)" />
-        <StatCard value={users.filter(u => u.role === 'ADMIN').length}            label="Admins"         color="var(--coral)" />
-        <StatCard value={users.filter(u => u.role === 'UNDERGRADUATE').length}    label="Undergraduates" color="var(--purple)" />
+        <StatCard value={orthodontists.length}  label="Orthodontists"  color="var(--blue-mid)" />
+        <StatCard value={undergraduates.length} label="Undergraduates" color="var(--purple)" />
       </div>
 
-      <input placeholder="Search by name or email…" value={search}
-        onChange={e => setSearch(e.target.value)} style={{ maxWidth: 340, marginBottom: 14 }} />
+      {/* Filter row */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+        <input
+          placeholder="Search by name or email…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ maxWidth: 280 }}
+        />
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['ALL', 'ORTHODONTIST', 'UNDERGRADUATE'].map(r => (
+            <button key={r} onClick={() => setRoleFilter(r)}
+              className={`btn btn-sm ${roleFilter === r ? 'btn-primary' : 'btn-outline'}`}>
+              {r === 'ALL' ? 'All' : r === 'ORTHODONTIST' ? 'Orthodontists' : 'Undergraduates'}
+              {' '}({r === 'ALL' ? nonAdmins.length : r === 'ORTHODONTIST' ? orthodontists.length : undergraduates.length})
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {loading ? (
           <div className="centered"><div className="spinner" /></div>
+        ) : searched.length === 0 ? (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>No users found.</div>
         ) : (
           <table>
             <thead>
@@ -105,9 +128,11 @@ function UsersTab() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(u => (
+              {searched.map(u => (
                 <tr key={u.id}>
-                  <td style={{ fontWeight: 500 }}>{u.role === 'ORTHODONTIST' ? `Dr. ${u.name}` : u.name}</td>
+                  <td style={{ fontWeight: 500 }}>
+                    {u.role === 'ORTHODONTIST' ? `Dr. ${u.name}` : u.name}
+                  </td>
                   <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{u.email}</td>
                   <td>
                     <span className={`badge ${ROLE_BADGE[u.role] ?? 'badge-gray'}`}>{u.role}</span>
@@ -140,13 +165,12 @@ function UsersTab() {
   )
 }
 
-// ── Training Review Tab ──────────────────────────────────────────────────
-function TrainingTab() {
-  const [sets, setSets]         = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [filter, setFilter]     = useState('PENDING')
-  const [reviewing, setReviewing] = useState({})
-  const [comments, setComments]   = useState({})
+// ── Submissions Overview Tab (READ-ONLY for admin) ────────────────────────
+function TrainingOverviewTab() {
+  const [sets, setSets]       = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter]   = useState('ALL')
+  const [search, setSearch]   = useState('')
 
   useEffect(() => { load() }, [])
 
@@ -157,117 +181,118 @@ function TrainingTab() {
     finally { setLoading(false) }
   }
 
-  async function review(id, status) {
-    setReviewing(r => ({ ...r, [id]: true }))
-    try {
-      await trainingApi.review(id, { status, comment: comments[id] ?? '' })
-      setSets(s => s.map(t =>
-        t.id === id ? { ...t, status, reviewerComment: comments[id] } : t))
-    } catch (err) { alert(err.response?.data?.message || 'Review failed.') }
-    finally { setReviewing(r => ({ ...r, [id]: false })) }
-  }
-
-  const filtered = filter === 'ALL' ? sets : sets.filter(s => s.status === filter)
   const counts = {
-    ALL: sets.length,
+    ALL:      sets.length,
     PENDING:  sets.filter(s => s.status === 'PENDING').length,
     APPROVED: sets.filter(s => s.status === 'APPROVED').length,
     REJECTED: sets.filter(s => s.status === 'REJECTED').length,
   }
 
+  const filtered = (filter === 'ALL' ? sets : sets.filter(s => s.status === filter))
+    .filter(s =>
+      (s.anonymisedLabel    ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (s.submittedBy?.name  ?? '').toLowerCase().includes(search.toLowerCase())
+    )
+
   return (
     <>
-      <div className="row" style={{ marginBottom: 20 }}>
-        <StatCard value={counts.PENDING}  label="Pending Review" color="var(--amber)" />
-        <StatCard value={counts.APPROVED} label="Approved"       color="var(--green)" />
-        <StatCard value={counts.REJECTED} label="Rejected"       color="var(--coral)" />
+      <div className="alert alert-info" style={{ marginBottom: 20 }}>
+        👁 <strong>Read-only view.</strong> Approving and rejecting submissions is handled by the assigned orthodontist in their Review Submissions section.
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        {['PENDING', 'APPROVED', 'REJECTED', 'ALL'].map(f => (
-          <button key={f} onClick={() => setFilter(f)}
-            className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-outline'}`}>
-            {f} ({counts[f] ?? sets.length})
-          </button>
-        ))}
+      {/* Stats */}
+      <div className="row" style={{ marginBottom: 20 }}>
+        <StatCard value={counts.PENDING}  label="Pending"  color="var(--amber)" />
+        <StatCard value={counts.APPROVED} label="Approved" color="var(--green)" />
+        <StatCard value={counts.REJECTED} label="Rejected" color="var(--coral)" />
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        <input placeholder="Search by label or student name…"
+          value={search} onChange={e => setSearch(e.target.value)}
+          style={{ maxWidth: 280 }} />
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-outline'}`}>
+              {f} ({counts[f] ?? sets.length})
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
         <div className="centered"><div className="spinner" /></div>
       ) : filtered.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
-          No {filter.toLowerCase()} submissions.
+          No {filter === 'ALL' ? '' : filter.toLowerCase() + ' '}submissions found.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {filtered.map(t => (
-            <div key={t.id} className="card" style={{ padding: '18px 20px' }}>
-              <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontWeight: 600 }}>{t.anonymisedLabel}</span>
-                  <span className={`badge ${STATUS_BADGE[t.status]}`}>{t.status}</span>
-                  <span style={{ fontWeight: 700, color: 'var(--blue-dark)' }}>
-                    PAR: {t.groundTruthPar}
-                  </span>
-                </div>
-                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  Submitted by: {t.submittedBy?.name ?? '—'} &nbsp;·&nbsp;
-                  {new Date(t.submittedAt).toLocaleDateString()}
-                </span>
-              </div>
-
-              {t.sourceDescription && (
-                <p style={{ fontSize: 13, marginBottom: 10 }}>{t.sourceDescription}</p>
-              )}
-
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                {(t.modelFiles ?? []).map(f => (
-                  <div key={f.id} style={{
-                    padding: '5px 12px', background: 'var(--purple-light)',
-                    borderRadius: 'var(--radius-sm)', fontSize: 12
-                  }}>
-                    <span style={{ fontWeight: 600, color: 'var(--purple)' }}>{f.slot}</span>
-                    <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>{f.fileName}</span>
-                  </div>
-                ))}
-              </div>
-
-              {t.reviewerComment && (
-                <div className="alert alert-info" style={{ marginBottom: 10, fontSize: 13 }}>
-                  Reviewer note: {t.reviewerComment}
-                </div>
-              )}
-
-              {t.status === 'PENDING' && (
-                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 200 }}>
-                    <input placeholder="Optional reviewer comment…"
-                      value={comments[t.id] ?? ''}
-                      onChange={e => setComments(c => ({ ...c, [t.id]: e.target.value }))}
-                      style={{ fontSize: 13 }} />
-                  </div>
-                  <button className="btn btn-green btn-sm" disabled={reviewing[t.id]}
-                    onClick={() => review(t.id, 'APPROVED')}>
-                    {reviewing[t.id] ? <span className="spinner" /> : '✅ Approve'}
-                  </button>
-                  <button className="btn btn-danger btn-sm" disabled={reviewing[t.id]}
-                    onClick={() => review(t.id, 'REJECTED')}>
-                    {reviewing[t.id] ? <span className="spinner" /> : '❌ Reject'}
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Label</th>
+                <th>Submitted By</th>
+                <th>Reviewer (Orthodontist)</th>
+                <th>PAR Score</th>
+                <th>Models</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Reviewer Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(t => (
+                <tr key={t.id}>
+                  <td style={{ fontWeight: 500 }}>{t.anonymisedLabel}</td>
+                  <td style={{ fontSize: 13 }}>{t.submittedBy?.name ?? '—'}</td>
+                  <td style={{ fontSize: 13 }}>
+                    {t.reviewer ? `Dr. ${t.reviewer.name}` : '—'}
+                  </td>
+                  <td>
+                    <span style={{ fontWeight: 700, color: 'var(--blue-dark)' }}>
+                      {t.groundTruthPar}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      {(t.modelFiles ?? []).map(f => (
+                        <span key={f.id} className="badge badge-purple" style={{ fontSize: 11 }}>
+                          {f.slot}
+                        </span>
+                      ))}
+                      {(!t.modelFiles || t.modelFiles.length === 0) && (
+                        <span className="badge badge-gray" style={{ fontSize: 11 }}>None</span>
+                      )}
+                    </div>
+                  </td>
+                  <td style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                    {new Date(t.submittedAt).toLocaleDateString()}
+                  </td>
+                  <td>
+                    <span className={`badge ${STATUS_BADGE[t.status]}`}>{t.status}</span>
+                  </td>
+                  <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                    {t.reviewerComment ?? '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </>
   )
 }
 
-// ── Audit Log Tab ────────────────────────────────────────────────────────
+// ── Audit Log Tab ─────────────────────────────────────────────────────────
 function AuditTab() {
-  const [logs, setLogs]       = useState([])
-  const [loading, setLoading] = useState(true)
+  const [logs, setLogs]         = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [actionFilter, setActionFilter] = useState('ALL')
+  const [search, setSearch]     = useState('')
 
   useEffect(() => { load() }, [])
 
@@ -284,54 +309,96 @@ function AuditTab() {
     REGISTER:               'badge-blue',
     LOGIN:                  'badge-gray',
     CREATE_PATIENT:         'badge-green',
+    UPDATE_PATIENT:         'badge-green',
+    ARCHIVE_PATIENT:        'badge-gray',
     CREATE_CASE:            'badge-green',
-    CALCULATE_PAR:          'badge-green',
+    CALCULATE_PAR:          'badge-blue',
     FINALIZE_CASE:          'badge-blue',
     UPLOAD_3D_MODELS:       'badge-purple',
     UPLOAD_TRAINING_MODELS: 'badge-purple',
     CREATE_TRAINING_SET:    'badge-amber',
     REVIEW_TRAINING_SET:    'badge-coral',
-    ARCHIVE_PATIENT:        'badge-gray',
+    DELETE_TRAINING_SET:    'badge-coral',
   }
 
+  const allActions = ['ALL', ...Object.keys(ACTION_COLOR)]
+
+  const filtered = logs.filter(log => {
+    const matchAction = actionFilter === 'ALL' || log.action === actionFilter
+    const matchSearch = (log.performedBy?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+                        (log.action ?? '').toLowerCase().includes(search.toLowerCase()) ||
+                        (log.entityType ?? '').toLowerCase().includes(search.toLowerCase())
+    return matchAction && matchSearch
+  })
+
   return (
-    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-      {loading ? (
-        <div className="centered"><div className="spinner" /></div>
-      ) : logs.length === 0 ? (
-        <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
-          No audit entries yet.
-        </div>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Time</th><th>User</th><th>Action</th><th>Entity</th><th>Detail</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map(log => (
-              <tr key={log.id}>
-                <td style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                  {new Date(log.performedAt).toLocaleString()}
-                </td>
-                <td style={{ fontSize: 13 }}>{log.performedBy?.name ?? '—'}</td>
-                <td>
-                  <span className={`badge ${ACTION_COLOR[log.action] ?? 'badge-gray'}`}
-                    style={{ fontSize: 11 }}>
-                    {log.action}
-                  </span>
-                </td>
-                <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                  {log.entityType} #{log.entityId}
-                </td>
-                <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{log.detail ?? '—'}</td>
+    <>
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        <input placeholder="Search by user, action or entity…"
+          value={search} onChange={e => setSearch(e.target.value)}
+          style={{ maxWidth: 280 }} />
+        <select
+          value={actionFilter}
+          onChange={e => setActionFilter(e.target.value)}
+          style={{ width: 'auto', padding: '7px 12px', fontSize: 13 }}>
+          {allActions.map(a => (
+            <option key={a} value={a}>{a === 'ALL' ? 'All Actions' : a.replace(/_/g, ' ')}</option>
+          ))}
+        </select>
+        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+          Showing {filtered.length} of {logs.length} entries
+        </span>
+      </div>
+
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        {loading ? (
+          <div className="centered"><div className="spinner" /></div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
+            No audit entries match your filters.
+          </div>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th><th>User</th><th>Role</th><th>Action</th><th>Entity</th><th>Detail</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
+            </thead>
+            <tbody>
+              {filtered.map(log => (
+                <tr key={log.id}>
+                  <td style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                    {new Date(log.performedAt).toLocaleString()}
+                  </td>
+                  <td style={{ fontSize: 13, fontWeight: 500 }}>
+                    {log.performedBy?.role === 'ORTHODONTIST'
+                      ? `Dr. ${log.performedBy?.name}`
+                      : log.performedBy?.name ?? '—'}
+                  </td>
+                  <td>
+                    <span className={`badge ${ROLE_BADGE[log.performedBy?.role] ?? 'badge-gray'}`}
+                      style={{ fontSize: 11 }}>
+                      {log.performedBy?.role ?? '—'}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`badge ${ACTION_COLOR[log.action] ?? 'badge-gray'}`}
+                      style={{ fontSize: 11 }}>
+                      {log.action?.replace(/_/g, ' ')}
+                    </span>
+                  </td>
+                  <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                    {log.entityType} #{log.entityId}
+                  </td>
+                  <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{log.detail ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </>
   )
 }
 

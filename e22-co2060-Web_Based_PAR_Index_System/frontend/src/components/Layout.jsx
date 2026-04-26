@@ -9,11 +9,12 @@ const ROLE_BADGE = {
 }
 
 export default function Layout() {
-  const { user, logout, isClinical, isUndergrad, isAdmin, isOrthodontist } = useAuth()
+  const { user, isUndergrad, isAdmin, isOrthodontist } = useAuth()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleLogout = () => { logout(); navigate('/login') }
+  const { logout } = useAuth()
   const badge = ROLE_BADGE[user?.role] ?? { label: user?.role, cls: 'badge-gray' }
   const displayName = user?.role === 'ORTHODONTIST' ? `Dr. ${user?.name}` : user?.name
 
@@ -23,25 +24,17 @@ export default function Layout() {
     <div style={{ display: 'flex', minHeight: '100svh' }}>
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div
-          onClick={closeSidebar}
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
-            zIndex: 40, display: 'none'
-          }}
-          className="mobile-overlay"
-        />
+        <div onClick={closeSidebar} className="mobile-overlay"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 40 }} />
       )}
 
-      {/* ── Sidebar ─────────────────────────────────────────────── */}
-      <aside
-        className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}
+      {/* ── Sidebar ───────────────────────────────────────────── */}
+      <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}
         style={{
           width: 230, background: 'var(--blue-dark)', color: '#fff',
           display: 'flex', flexDirection: 'column', flexShrink: 0,
           padding: '0 0 16px', zIndex: 50,
-        }}
-      >
+        }}>
         {/* Logo */}
         <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
@@ -56,23 +49,26 @@ export default function Layout() {
         <nav style={{ flex: 1, padding: '12px 10px' }}>
           <NavItem to="/dashboard" icon="⊞" label="Dashboard" onClick={closeSidebar} />
 
-          {isClinical() && <>
+          {/* Orthodontist — full clinical access */}
+          {isOrthodontist() && <>
             <NavGroup label="Clinical" />
-            <NavItem to="/patients" icon="👤" label="Patients" onClick={closeSidebar} />
-            {isOrthodontist() && (
-              <NavItem to="/training/review" icon="🔍" label="Review Submissions" onClick={closeSidebar} />
-            )}
+            <NavItem to="/patients"        icon="👤" label="Patients"            onClick={closeSidebar} />
+            <NavItem to="/training/review" icon="🔍" label="Review Submissions"  onClick={closeSidebar} />
           </>}
 
+          {/* Admin — read-only patient view + admin panel */}
+          {isAdmin() && <>
+            <NavGroup label="Overview" />
+            <NavItem to="/patients" icon="👤" label="Patients (View)"  onClick={closeSidebar} />
+            <NavGroup label="Administration" />
+            <NavItem to="/admin"    icon="⚙"  label="Admin Panel"      onClick={closeSidebar} />
+          </>}
+
+          {/* Undergraduate — training only */}
           {isUndergrad() && <>
             <NavGroup label="Training Dataset" />
             <NavItem to="/training"        icon="📁" label="My Submissions" onClick={closeSidebar} />
-            <NavItem to="/training/submit" icon="⬆" label="Submit Models"  onClick={closeSidebar} />
-          </>}
-
-          {isAdmin() && <>
-            <NavGroup label="Administration" />
-            <NavItem to="/admin" icon="⚙" label="Admin Panel" onClick={closeSidebar} />
+            <NavItem to="/training/submit" icon="⬆"  label="Submit Models"  onClick={closeSidebar} />
           </>}
         </nav>
 
@@ -87,16 +83,17 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* ── Main ────────────────────────────────────────────────── */}
+      {/* ── Main ──────────────────────────────────────────────── */}
       <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
         {/* Mobile top bar */}
         <div className="mobile-topbar" style={{
           display: 'none', alignItems: 'center', gap: 12,
           padding: '12px 16px', background: 'var(--blue-dark)',
-          borderBottom: '1px solid rgba(255,255,255,.12)', position: 'sticky', top: 0, zIndex: 30,
+          borderBottom: '1px solid rgba(255,255,255,.12)',
+          position: 'sticky', top: 0, zIndex: 30,
         }}>
           <button onClick={() => setSidebarOpen(true)}
-            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', padding: 0, lineHeight: 1 }}>
+            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', padding: 0 }}>
             ☰
           </button>
           <span style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>PAR Index System</span>
@@ -115,12 +112,10 @@ export default function Layout() {
             transform: translateX(-100%);
             transition: transform 0.25s ease;
           }
-          .sidebar.sidebar-open {
-            transform: translateX(0);
-          }
-          .sidebar-close-btn { display: block !important; }
-          .mobile-overlay { display: block !important; }
-          .mobile-topbar { display: flex !important; }
+          .sidebar.sidebar-open { transform: translateX(0); }
+          .sidebar-close-btn    { display: block !important; }
+          .mobile-overlay       { display: block !important; }
+          .mobile-topbar        { display: flex !important; }
         }
       `}</style>
     </div>
@@ -131,10 +126,8 @@ function NavGroup({ label }) {
   return (
     <div style={{
       fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
-      color: 'rgba(255,255,255,.35)', padding: '14px 10px 4px'
-    }}>
-      {label}
-    </div>
+      color: 'rgba(255,255,255,.35)', padding: '14px 10px 4px',
+    }}>{label}</div>
   )
 }
 

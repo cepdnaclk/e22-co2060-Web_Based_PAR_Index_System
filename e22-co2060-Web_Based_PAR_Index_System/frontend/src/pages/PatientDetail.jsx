@@ -31,24 +31,23 @@ export default function PatientDetail() {
   if (error)   return <div className="page"><div className="alert alert-error">{error}</div></div>
   if (!patient) return <div className="page"><div className="alert alert-error">Patient not found.</div></div>
 
-  // Find the assigned orthodontist from cases
-  const assignedOrtho = cases.find(c => c.createdBy)?.createdBy
-  const orthoDisplay  = assignedOrtho ? `Dr. ${assignedOrtho.name}` : '—'
-
   return (
     <div className="page">
+      {/* Breadcrumb */}
       <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>
         <Link to="/patients" style={{ color: 'var(--blue-mid)' }}>Patients</Link>
         {' / '}
         <span>{patient.name}</span>
       </div>
 
+      {/* Admin notice */}
       {isAdmin() && (
         <div className="alert alert-info" style={{ marginBottom: 16 }}>
           👁 You are viewing this patient record as <strong>Administrator</strong>. Case editing is restricted to orthodontists.
         </div>
       )}
 
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
         <div>
           <h1>{patient.name}</h1>
@@ -65,7 +64,6 @@ export default function PatientDetail() {
         <div className="row" style={{ flexWrap: 'wrap', gap: 16 }}>
           <InfoRow label="Date of Birth" value={patient.dateOfBirth ?? '—'} />
           <InfoRow label="Contact"       value={patient.contact ?? '—'} />
-          <InfoRow label="Assigned Orthodontist" value={orthoDisplay} />
           <InfoRow label="Status" value={
             <span className={`badge ${patient.isArchived ? 'badge-gray' : 'badge-green'}`}>
               {patient.isArchived ? 'Archived' : 'Active'}
@@ -75,7 +73,10 @@ export default function PatientDetail() {
       </div>
 
       {/* Cases */}
-      <h2 style={{ marginBottom: 14 }}>Orthodontic Cases ({cases.length})</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <h2 style={{ margin: 0 }}>Orthodontic Cases ({cases.length})</h2>
+      </div>
+
       {cases.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>
           No cases yet.{' '}
@@ -87,7 +88,14 @@ export default function PatientDetail() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {cases.map(c => <CaseRow key={c.id} c={c} isAdmin={isAdmin()} isOrthodontist={isOrthodontist()} />)}
+          {cases.map(c => (
+            <CaseRow
+              key={c.id}
+              c={c}
+              canOpen={isOrthodontist()}
+              currentUserName={user?.name}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -103,12 +111,10 @@ function InfoRow({ label, value }) {
   )
 }
 
-function CaseRow({ c, isAdmin, isOrthodontist }) {
+function CaseRow({ c, canOpen, currentUserName }) {
   const stageBadge = c.stage === 'PRE'
     ? <span className="badge badge-blue">Pre-treatment</span>
     : <span className="badge badge-green">Post-treatment</span>
-
-  const creatorName = c.createdBy ? `Dr. ${c.createdBy.name}` : null
 
   return (
     <div className="card" style={{ padding: '16px 20px' }}>
@@ -123,23 +129,23 @@ function CaseRow({ c, isAdmin, isOrthodontist }) {
               PAR: {c.parScore.totalWeighted}
             </span>
           )}
-          {creatorName && (
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{creatorName}</span>
-          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
             {new Date(c.createdAt).toLocaleDateString()}
           </span>
-          {isOrthodontist() && (
-            <Link to={`/cases/${c.id}`} className="btn btn-outline btn-sm">Open</Link>
-          )}
-          {isAdmin && (
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>Read-only</span>
+          {canOpen ? (
+            <Link to={`/cases/${c.id}`} className="btn btn-primary btn-sm">
+              Open →
+            </Link>
+          ) : (
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+              Read-only
+            </span>
           )}
         </div>
       </div>
-      {c.notes && <p style={{ fontSize: 13, marginTop: 8 }}>{c.notes}</p>}
+      {c.notes && <p style={{ fontSize: 13, marginTop: 8, color: 'var(--text-muted)' }}>{c.notes}</p>}
     </div>
   )
 }

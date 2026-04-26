@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { patientApi, trainingApi, adminApi } from '../api/api'
 
 export default function Dashboard() {
-  const { user, isClinical, isUndergrad, isAdmin, isOrthodontist } = useAuth()
+  const { user, isUndergrad, isAdmin, isOrthodontist } = useAuth()
   const [stats, setStats]     = useState({})
   const [loading, setLoading] = useState(true)
 
@@ -20,6 +20,7 @@ export default function Dashboard() {
           ])
           s.patients       = pts.length
           s.pendingReviews = assigned.filter(t => t.status === 'PENDING').length
+          s.totalReviews   = assigned.length
         }
 
         if (isAdmin()) {
@@ -27,9 +28,10 @@ export default function Dashboard() {
             adminApi.users(),
             patientApi.list(),
           ])
-          s.totalUsers = users.length
-          s.patients   = pts.length
-          s.orthodontists = users.filter(u => u.role === 'ORTHODONTIST').length
+          // Order: Orthodontists, Undergraduates, Patients
+          s.orthodontists  = users.filter(u => u.role === 'ORTHODONTIST').length
+          s.undergraduates = users.filter(u => u.role === 'UNDERGRADUATE').length
+          s.patients       = pts.length
         }
 
         if (isUndergrad()) {
@@ -37,6 +39,7 @@ export default function Dashboard() {
           s.mySubmissions = data.length
           s.pending       = data.filter(t => t.status === 'PENDING').length
           s.approved      = data.filter(t => t.status === 'APPROVED').length
+          s.rejected      = data.filter(t => t.status === 'REJECTED').length
         }
 
         setStats(s)
@@ -63,52 +66,79 @@ export default function Dashboard() {
     <div className="page">
       <div style={{ marginBottom: 28 }}>
         <h1>{greeting()}, {displayName} 👋</h1>
-        <p style={{ marginTop: 4 }}>Welcome to the PAR Index System</p>
+        <p style={{ marginTop: 4, color: 'var(--text-muted)' }}>Welcome to the PAR Index System</p>
       </div>
 
-      {/* ── Orthodontist ──────────────────────────────────────── */}
+      {/* ── Orthodontist ─────────────────────────────────────── */}
       {isOrthodontist() && (
         <>
           <h2 style={{ marginBottom: 14 }}>Clinical Overview</h2>
           <div className="row" style={{ marginBottom: 28 }}>
-            <StatCard value={stats.patients ?? 0}       label="Total Patients"          color="var(--blue-dark)" />
-            <StatCard value={stats.pendingReviews ?? 0} label="Submissions to Review"   color="var(--amber)" />
+            <StatCard value={stats.patients       ?? 0} label="My Patients"              color="var(--blue-dark)" />
+            <StatCard value={stats.pendingReviews ?? 0} label="Submissions to Review"    color="var(--amber)" />
+            <StatCard value={stats.totalReviews   ?? 0} label="Total Assigned Reviews"   color="var(--blue-mid)" />
           </div>
           <div className="row" style={{ marginBottom: 32 }}>
-            <QuickCard title="Manage Patients" desc="Create new patient records, view profiles, and open orthodontic cases." to="/patients" btnLabel="Go to Patients" color="var(--blue-mid)" />
-            <QuickCard title="Review Submissions" desc="Review and approve 3D model training submissions from undergraduates." to="/training/review" btnLabel="Open Reviews" color="var(--green)" />
+            <QuickCard
+              title="Manage Patients"
+              desc="Create new patient records, view profiles, and open orthodontic cases for PAR scoring."
+              to="/patients" btnLabel="Go to Patients" color="var(--blue-mid)"
+            />
+            <QuickCard
+              title="Review Submissions"
+              desc="Review and approve 3D model training submissions assigned to you by dental undergraduates."
+              to="/training/review" btnLabel="Open Reviews" color="var(--green)"
+            />
           </div>
         </>
       )}
 
-      {/* ── Admin ────────────────────────────────────────────── */}
+      {/* ── Admin ─────────────────────────────────────────────── */}
       {isAdmin() && (
         <>
           <h2 style={{ marginBottom: 14 }}>System Overview</h2>
+          {/* Order: Orthodontists, Undergraduates, Patients */}
           <div className="row" style={{ marginBottom: 28 }}>
-            <StatCard value={stats.totalUsers    ?? 0} label="Registered Users"     color="var(--blue-dark)" />
-            <StatCard value={stats.patients      ?? 0} label="Total Patients"       color="var(--blue-mid)" />
-            <StatCard value={stats.orthodontists ?? 0} label="Orthodontists"        color="var(--green)" />
+            <StatCard value={stats.orthodontists  ?? 0} label="Orthodontists"  color="var(--blue-mid)" />
+            <StatCard value={stats.undergraduates ?? 0} label="Undergraduates" color="var(--purple)" />
+            <StatCard value={stats.patients       ?? 0} label="Patients"       color="var(--green)" />
           </div>
           <div className="row" style={{ marginBottom: 32 }}>
-            <QuickCard title="Patient Records" desc="View all patient records and their assigned orthodontists (read-only)." to="/patients" btnLabel="View Patients" color="var(--blue-mid)" />
-            <QuickCard title="Admin Panel" desc="Manage users, change roles, and view the system audit log." to="/admin" btnLabel="Open Admin Panel" color="var(--coral)" />
+            <QuickCard
+              title="Patient Records"
+              desc="View all patient records and their associated cases (read-only for admin)."
+              to="/patients" btnLabel="View Patients" color="var(--blue-mid)"
+            />
+            <QuickCard
+              title="Admin Panel"
+              desc="Manage users, change roles, view submission statuses and the full system audit log."
+              to="/admin" btnLabel="Open Admin Panel" color="var(--coral)"
+            />
           </div>
         </>
       )}
 
-      {/* ── Undergraduate ────────────────────────────────────── */}
+      {/* ── Undergraduate ─────────────────────────────────────── */}
       {isUndergrad() && (
         <>
           <h2 style={{ marginBottom: 14 }}>Training Dataset Contributions</h2>
           <div className="row" style={{ marginBottom: 28 }}>
-            <StatCard value={stats.mySubmissions ?? 0} label="Total Submissions" color="var(--purple)" />
-            <StatCard value={stats.pending ?? 0}       label="Pending Review"    color="var(--amber)" />
-            <StatCard value={stats.approved ?? 0}      label="Approved"          color="var(--green)" />
+            <StatCard value={stats.mySubmissions ?? 0} label="Total Submissions" color="var(--blue-dark)" />
+            <StatCard value={stats.pending       ?? 0} label="Pending Review"    color="var(--amber)" />
+            <StatCard value={stats.approved      ?? 0} label="Approved"          color="var(--green)" />
+            <StatCard value={stats.rejected      ?? 0} label="Rejected"          color="var(--coral)" />
           </div>
           <div className="row" style={{ marginBottom: 32 }}>
-            <QuickCard title="Submit 3D Models" desc="Upload a set of three 3D dental model files (upper, lower, buccal) with a ground-truth PAR label." to="/training/submit" btnLabel="New Submission" color="var(--purple)" />
-            <QuickCard title="My Submissions" desc="Track the review status of your submitted training sets and see orthodontist feedback." to="/training" btnLabel="View Submissions" color="var(--blue-mid)" />
+            <QuickCard
+              title="Submit 3D Models"
+              desc="Upload a set of three 3D dental model files (upper, lower, buccal) with a verified PAR score. Assigned to an orthodontist for review."
+              to="/training/submit" btnLabel="New Submission" color="var(--purple)"
+            />
+            <QuickCard
+              title="My Submissions"
+              desc="Track the review status of your submitted training sets and see orthodontist feedback."
+              to="/training" btnLabel="View Submissions" color="var(--blue-mid)"
+            />
           </div>
         </>
       )}
@@ -120,7 +150,8 @@ export default function Dashboard() {
           <div>
             <div style={{ fontWeight: 600, color: 'var(--amber)', fontSize: 14 }}>ML Prediction — Coming Soon</div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>
-              Automated PAR score prediction from 3D dental models will be available once the ML model is trained on the approved undergraduate dataset.
+              Automated PAR score prediction from 3D dental models will be available once the ML model
+              is trained on the approved undergraduate dataset.
             </div>
           </div>
         </div>
@@ -142,7 +173,7 @@ function QuickCard({ title, desc, to, btnLabel, color }) {
   return (
     <div className="card col">
       <div style={{ fontWeight: 600, color: 'var(--blue-dark)', marginBottom: 6 }}>{title}</div>
-      <p style={{ fontSize: 13, marginBottom: 16 }}>{desc}</p>
+      <p style={{ fontSize: 13, marginBottom: 16, color: 'var(--text-muted)' }}>{desc}</p>
       <Link to={to} className="btn btn-outline btn-sm" style={{ borderColor: color, color, width: 'fit-content' }}>
         {btnLabel} →
       </Link>

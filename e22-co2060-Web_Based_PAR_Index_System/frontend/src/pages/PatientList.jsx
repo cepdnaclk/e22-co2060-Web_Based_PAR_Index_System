@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { patientApi } from '../api/api'
+import { useAuth } from '../context/AuthContext'
 
 export default function PatientList() {
+  const { isAdmin, isOrthodontist } = useAuth()
   const [patients, setPatients] = useState([])
   const [search, setSearch]     = useState('')
   const [loading, setLoading]   = useState(true)
@@ -32,7 +34,16 @@ export default function PatientList() {
           <h1>Patients</h1>
           <p style={{ marginTop: 3 }}>{patients.length} active record{patients.length !== 1 ? 's' : ''}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowNew(true)}>+ New Patient</button>
+        {/* Only orthodontist sees + New Patient button */}
+        {isOrthodontist() && (
+          <button className="btn btn-primary" onClick={() => setShowNew(true)}>+ New Patient</button>
+        )}
+        {/* Admin sees read-only badge */}
+        {isAdmin() && (
+          <span className="badge badge-coral" style={{ fontSize: 13, padding: '6px 14px' }}>
+            👁 Read-only view
+          </span>
+        )}
       </div>
 
       <div style={{ marginBottom: 16 }}>
@@ -44,7 +55,7 @@ export default function PatientList() {
         />
       </div>
 
-      {showNew && (
+      {showNew && isOrthodontist() && (
         <NewPatientForm
           onSaved={p => { setShowNew(false); navigate(`/patients/${p.id}`) }}
           onCancel={() => setShowNew(false)}
@@ -56,7 +67,10 @@ export default function PatientList() {
           <div className="centered"><div className="spinner" /></div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
-            {search ? 'No patients match your search.' : 'No patients yet. Create one above.'}
+            {search ? 'No patients match your search.' : 'No patients yet.'}
+            {isOrthodontist() && !search && (
+              <span> <button className="btn btn-ghost btn-sm" onClick={() => setShowNew(true)}>Create one →</button></span>
+            )}
           </div>
         ) : (
           <table>
@@ -67,12 +81,15 @@ export default function PatientList() {
                 <th>Date of Birth</th>
                 <th>Contact</th>
                 <th>Status</th>
-                <th></th>
+                {/* Only orthodontist gets View button column */}
+                {isOrthodontist() && <th></th>}
               </tr>
             </thead>
             <tbody>
               {filtered.map(p => (
-                <tr key={p.id}>
+                <tr key={p.id}
+                  onClick={() => isOrthodontist() && navigate(`/patients/${p.id}`)}
+                  style={{ cursor: isOrthodontist() ? 'pointer' : 'default' }}>
                   <td><span className="font-mono text-sm">{p.referenceId}</span></td>
                   <td style={{ fontWeight: 500 }}>{p.name}</td>
                   <td>{p.dateOfBirth ?? '—'}</td>
@@ -82,9 +99,16 @@ export default function PatientList() {
                       {p.isArchived ? 'Archived' : 'Active'}
                     </span>
                   </td>
-                  <td>
-                    <Link to={`/patients/${p.id}`} className="btn btn-ghost btn-sm">View →</Link>
-                  </td>
+                  {isOrthodontist() && (
+                    <td>
+                      <Link
+                        to={`/patients/${p.id}`}
+                        className="btn btn-outline btn-sm"
+                        onClick={e => e.stopPropagation()}>
+                        View →
+                      </Link>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -106,10 +130,8 @@ function NewPatientForm({ onSaved, onCancel }) {
     e.preventDefault()
     if (!form.referenceId.trim()) { setError('Reference ID is required.'); return }
     if (!form.name.trim())        { setError('Name is required.'); return }
-    setSaving(true)
-    setError('')
+    setSaving(true); setError('')
     try {
-      // FIXED: send plain JSON — PatientController now accepts Map<String,String>
       const { data } = await patientApi.create({
         referenceId:  form.referenceId.trim(),
         name:         form.name.trim(),
