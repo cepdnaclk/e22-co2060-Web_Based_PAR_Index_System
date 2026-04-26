@@ -16,10 +16,15 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final AuditService auditService;
 
+    /**
+     * ADMIN  → sees all patients (read-only in UI).
+     * ORTHODONTIST → sees their own patients.
+     */
     public List<Patient> getAllForUser(User user) {
         if (user.getRole() == User.Role.ADMIN) {
             return patientRepository.findAll();
         }
+        // Orthodontist sees patients they created
         return patientRepository.findByCreatedByIdAndIsArchivedFalse(user.getId());
     }
 
@@ -30,6 +35,9 @@ public class PatientService {
 
     @Transactional
     public Patient create(Patient patient, User creator) {
+        if (creator.getRole() != User.Role.ORTHODONTIST) {
+            throw new IllegalArgumentException("Only orthodontists can create patient records.");
+        }
         if (patientRepository.findByReferenceId(patient.getReferenceId()).isPresent()) {
             throw new IllegalArgumentException("Reference ID already exists: " + patient.getReferenceId());
         }

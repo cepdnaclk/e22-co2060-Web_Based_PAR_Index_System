@@ -50,11 +50,19 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    /** Admin: change a user's role */
+    /**
+     * Admin: change a user's role.
+     * Valid roles are ADMIN, ORTHODONTIST, UNDERGRADUATE.
+     * DENTIST role has been removed from the system.
+     */
     @PatchMapping("/admin/users/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> changeRole(@PathVariable Long id,
                                            @RequestParam User.Role role) {
+        if (role == User.Role.DENTIST) {
+            throw new IllegalArgumentException(
+                    "DENTIST role is no longer supported. Use ORTHODONTIST instead.");
+        }
         userService.changeRole(id, role);
         return ResponseEntity.noContent().build();
     }

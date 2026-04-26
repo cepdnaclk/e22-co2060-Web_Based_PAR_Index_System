@@ -36,7 +36,7 @@ export const authApi = {
 export const patientApi = {
   list:    ()           => api.get('/patients'),
   get:     id           => api.get(`/patients/${id}`),
-  create:  data         => api.post('/patients', data),           // JSON body
+  create:  data         => api.post('/patients', data),
   update:  (id, data)   => api.put(`/patients/${id}`, data),
   archive: id           => api.patch(`/patients/${id}/archive`),
   search:  query        => api.get('/patients/search', { params: { query } }),
@@ -48,12 +48,14 @@ export const caseApi = {
   get:           id        => api.get(`/cases/${id}`),
   create:        params    => api.post('/cases', null, { params }),
 
-  // FIXED: explicit multipart/form-data header so Spring Boot @RequestPart works
   uploadModels: (id, formData) =>
     api.post(`/cases/${id}/models`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 120000,
     }),
+
+  // Serve clinical model file for viewing
+  getModelFileUrl: (caseId, slot) => `/api/v1/cases/${caseId}/models/${slot}`,
 
   calculate: (id, data) => api.post(`/cases/${id}/calculate`, data),
   finalize:  id         => api.post(`/cases/${id}/finalize`),
@@ -72,31 +74,19 @@ export const trainingApi = {
   listMy:       ()           => api.get('/training-sets/my'),
   listAssigned: ()           => api.get('/training-sets/assigned'),
   listAll:      (status)     => api.get('/training-sets', { params: status ? { status } : {} }),
+  // Returns only ORTHODONTIST users
   getReviewers: ()           => api.get('/training-sets/reviewers'),
   review:       (id, params) => api.put(`/training-sets/${id}/review`, null, { params }),
   delete:       id           => api.delete(`/training-sets/${id}`),
+  getModelUrl:  (setId, slot) => `/api/v1/training-sets/${setId}/models/${slot}`,
 }
 
 // ── Landmarks & Auto-Score ────────────────────────────────────────────────
 export const landmarkApi = {
-  /**
-   * Submit (or replace) a batch of 3D points for one arch slot.
-   * @param {number} caseId
-   * @param {{ slot: 'UPPER'|'LOWER'|'BUCCAL', points: {name,x,y,z}[] }} data
-   */
-  submit: (caseId, data) => api.post(`/cases/${caseId}/landmarks`, data),
-
-  /** Retrieve all stored landmarks for a case. */
-  get: (caseId) => api.get(`/cases/${caseId}/landmarks`),
-
-  /** Delete all stored landmarks (allows re-placing from scratch). */
-  clear: (caseId) => api.delete(`/cases/${caseId}/landmarks`),
-
-  /**
-   * Run the full geometric PAR calculation from stored landmarks and save the result.
-   * Returns an AutoScoreResponse with per-component breakdown.
-   */
-  autoCalculate: (caseId) => api.post(`/cases/${caseId}/auto-calculate`),
+  submit:       (caseId, data) => api.post(`/cases/${caseId}/landmarks`, data),
+  get:          (caseId)       => api.get(`/cases/${caseId}/landmarks`),
+  clear:        (caseId)       => api.delete(`/cases/${caseId}/landmarks`),
+  autoCalculate:(caseId)       => api.post(`/cases/${caseId}/auto-calculate`),
 }
 
 // ── Admin ─────────────────────────────────────────────────────────────────

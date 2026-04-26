@@ -121,7 +121,7 @@ export default function TrainingList() {
                     {new Date(t.submittedAt).toLocaleDateString()}
                   </td>
                   <td style={{ fontSize: 13 }}>
-                    {t.reviewer ? t.reviewer.name : '—'}
+                    {t.reviewer ? `Dr. ${t.reviewer.name}` : '—'}
                   </td>
                   <td>
                     <span className={`badge ${STATUS_BADGE[t.status]}`}>{t.status}</span>

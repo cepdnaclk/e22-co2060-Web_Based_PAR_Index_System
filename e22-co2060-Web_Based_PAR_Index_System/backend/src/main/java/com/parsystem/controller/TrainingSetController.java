@@ -33,6 +33,19 @@ public class TrainingSetController {
     private final StorageService storageService;
     private final AuditService auditService;
 
+    /**
+     * Return all registered ORTHODONTIST users so undergraduates
+     * can pick a reviewer.  DENTIST role has been removed from the
+     * system, only ORTHODONTIST is a valid reviewer.
+     */
+    @GetMapping("/reviewers")
+    @PreAuthorize("hasAnyRole('UNDERGRADUATE','ADMIN')")
+    public ResponseEntity<List<User>> getReviewers() {
+        List<User> orthos = userRepository.findByRoleIn(
+                List.of(User.Role.ORTHODONTIST));
+        return ResponseEntity.ok(orthos);
+    }
+
     /** Dental undergraduate: create a new training set entry. */
     @PostMapping
     @PreAuthorize("hasAnyRole('UNDERGRADUATE','ADMIN')")
@@ -46,8 +59,9 @@ public class TrainingSetController {
         User reviewer = userRepository.findById(reviewerId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid reviewer ID"));
 
-        if (reviewer.getRole() != User.Role.DENTIST && reviewer.getRole() != User.Role.ORTHODONTIST) {
-            throw new IllegalArgumentException("Reviewer must be a dentist or orthodontist");
+        // Only ORTHODONTIST can be a reviewer now (DENTIST role removed)
+        if (reviewer.getRole() != User.Role.ORTHODONTIST) {
+            throw new IllegalArgumentException("Reviewer must be an orthodontist");
         }
 
         TrainingSet ts = TrainingSet.builder()
@@ -110,16 +124,16 @@ public class TrainingSetController {
         return ResponseEntity.ok(trainingSetRepository.findAll());
     }
 
-    /** Dentist/Orthodontist: list submissions assigned to me. */
+    /** Orthodontist: list submissions assigned to me. */
     @GetMapping("/assigned")
-    @PreAuthorize("hasAnyRole('DENTIST','ORTHODONTIST','ADMIN')")
+    @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
     public ResponseEntity<List<TrainingSet>> getAssigned(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(trainingSetRepository.findByReviewerId(user.getId()));
     }
 
-    /** Dentist/Orthodontist/Admin: approve or reject a submission. */
+    /** Orthodontist/Admin: approve or reject a submission. */
     @PutMapping("/{id}/review")
-    @PreAuthorize("hasAnyRole('DENTIST','ORTHODONTIST','ADMIN')")
+    @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
     public ResponseEntity<TrainingSet> review(
             @PathVariable Long id,
             @RequestParam TrainingSet.Status status,
@@ -133,7 +147,6 @@ public class TrainingSetController {
         TrainingSet ts = trainingSetRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Training set not found: " + id));
 
-        // Check if user is the assigned reviewer or admin
         if (reviewer.getRole() != User.Role.ADMIN && !ts.getReviewer().getId().equals(reviewer.getId())) {
             throw new IllegalArgumentException("You can only review submissions assigned to you.");
         }
@@ -148,9 +161,12 @@ public class TrainingSetController {
         return ResponseEntity.ok(saved);
     }
 
-    /** Get a specific 3D model file for viewing. */
+    /**
+     * Serve a specific 3D model file for viewing by assigned orthodontist/admin.
+     * GET /api/v1/training-sets/{setId}/models/{slot}
+     */
     @GetMapping("/{setId}/models/{slot}")
-    @PreAuthorize("hasAnyRole('DENTIST','ORTHODONTIST','ADMIN')")
+    @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
     public ResponseEntity<Resource> getModelFile(
             @PathVariable Long setId,
             @PathVariable String slot,
@@ -159,13 +175,12 @@ public class TrainingSetController {
         TrainingSet ts = trainingSetRepository.findById(setId)
                 .orElseThrow(() -> new IllegalArgumentException("Training set not found: " + setId));
 
-        // Check if user is the assigned reviewer or admin
         if (user.getRole() != User.Role.ADMIN && !ts.getReviewer().getId().equals(user.getId())) {
             throw new IllegalArgumentException("You can only view models for submissions assigned to you.");
         }
 
         Model3DFile modelFile = ts.getModelFiles().stream()
-                .filter(f -> f.getSlot().equals(slot.toUpperCase()))
+                .filter(f -> f.getSlot().name().equalsIgnoreCase(slot))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Model file not found: " + slot));
 
@@ -173,13 +188,35 @@ public class TrainingSetController {
         Resource resource = new UrlResource(filePath.toUri());
 
         if (!resource.exists() || !resource.isReadable()) {
-            throw new RuntimeException("File not found or not readable");
+            throw new RuntimeException("File not found or not readable: " + filePath);
         }
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + modelFile.getFileName() + "\"")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(resource);
+    }
+
+    /** Delete a pending training set (undergraduate only). */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('UNDERGRADUATE','ADMIN')")
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+
+        TrainingSet ts = trainingSetRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Training set not found: " + id));
+
+        if (ts.getStatus() != TrainingSet.Status.PENDING) {
+            throw new IllegalStateException("Only pending submissions can be deleted.");
+        }
+        if (user.getRole() != User.Role.ADMIN && !ts.getSubmittedBy().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("You can only delete your own submissions.");
+        }
+
+        trainingSetRepository.deleteById(id);
+        auditService.log(user, "DELETE_TRAINING_SET", "TrainingSet", id, null);
+        return ResponseEntity.noContent().build();
     }
 
     // ── helper ────────────────────────────────────────────────────────

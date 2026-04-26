@@ -31,12 +31,13 @@ export function AuthProvider({ children }) {
 
   const isRole = (...roles) => roles.includes(user?.role)
 
-  const isClinical     = () => isRole('DENTIST', 'ORTHODONTIST', 'ADMIN')
-  const isUndergrad    = () => isRole('UNDERGRADUATE', 'ADMIN')
+  const isClinical     = () => isRole('ORTHODONTIST', 'ADMIN')
+  const isUndergrad    = () => isRole('UNDERGRADUATE')
   const isAdmin        = () => isRole('ADMIN')
+  const isOrthodontist = () => isRole('ORTHODONTIST')
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isClinical, isUndergrad, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, isClinical, isUndergrad, isAdmin, isOrthodontist }}>
       {children}
     </AuthContext.Provider>
   )

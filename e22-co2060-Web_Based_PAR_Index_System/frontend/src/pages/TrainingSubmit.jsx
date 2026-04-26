@@ -5,42 +5,48 @@ import ModelUploadSlots from '../components/ModelUploadSlots'
 
 export default function TrainingSubmit() {
   const navigate = useNavigate()
-  const [step, setStep]   = useState(1)   // 1=metadata, 2=upload, 3=done
+  const [step, setStep]   = useState(1)
   const [setId, setSetId] = useState(null)
 
   // Step 1 state
-  const [meta, setMeta]     = useState({ anonymisedLabel: '', groundTruthPar: '', sourceDescription: '', reviewerId: '' })
+  const [meta, setMeta]       = useState({ anonymisedLabel: '', groundTruthPar: '', sourceDescription: '', reviewerId: '' })
   const [reviewers, setReviewers] = useState([])
   const [metaErr, setMetaErr] = useState('')
   const [saving, setSaving]   = useState(false)
 
-  // Load reviewers on mount
+  // Load reviewers on mount — filtered to ORTHODONTIST only
   useEffect(() => {
-    trainingApi.getReviewers().then(({ data }) => setReviewers(data)).catch(() => {})
+    trainingApi.getReviewers()
+      .then(({ data }) => {
+        // Only keep orthodontists
+        const orthos = data.filter(r => r.role === 'ORTHODONTIST' || !r.role)
+        setReviewers(orthos)
+      })
+      .catch(() => {})
   }, [])
 
   // Step 2 state
-  const [files, setFiles]       = useState({})
+  const [files, setFiles]           = useState({})
   const [fileErrors, setFileErrors] = useState({})
   const [uploading, setUploading]   = useState(false)
   const [uploadErr, setUploadErr]   = useState('')
 
-  // ── Step 1: create training set entry ────────────────────────────
+  // ── Step 1: create training set entry ──────────────────────────
   const createSet = async e => {
     e.preventDefault()
     if (!meta.groundTruthPar || +meta.groundTruthPar < 0) {
       setMetaErr('Ground-truth PAR score is required and must be ≥ 0.'); return
     }
     if (!meta.reviewerId) {
-      setMetaErr('Please select a reviewer.'); return
+      setMetaErr('Please select an orthodontist reviewer.'); return
     }
     setSaving(true)
     try {
       const { data } = await trainingApi.create({
-        anonymisedLabel:    meta.anonymisedLabel,
-        groundTruthPar:     +meta.groundTruthPar,
-        sourceDescription:  meta.sourceDescription,
-        reviewerId:         +meta.reviewerId,
+        anonymisedLabel:   meta.anonymisedLabel,
+        groundTruthPar:    +meta.groundTruthPar,
+        sourceDescription: meta.sourceDescription,
+        reviewerId:        +meta.reviewerId,
       })
       setSetId(data.id)
       setStep(2)
@@ -49,7 +55,7 @@ export default function TrainingSubmit() {
     } finally { setSaving(false) }
   }
 
-  // ── Step 2: upload 3 model files ─────────────────────────────────
+  // ── Step 2: upload 3 model files ───────────────────────────────
   const uploadModels = async () => {
     const errs = {}
     ;['upperFile', 'lowerFile', 'buccalFile'].forEach(k => {
@@ -57,8 +63,7 @@ export default function TrainingSubmit() {
     })
     if (Object.keys(errs).length) { setFileErrors(errs); return }
 
-    setUploading(true)
-    setUploadErr('')
+    setUploading(true); setUploadErr('')
     try {
       const fd = new FormData()
       fd.append('upperFile',  files.upperFile)
@@ -75,7 +80,8 @@ export default function TrainingSubmit() {
     <div className="page">
       <h1 style={{ marginBottom: 6 }}>Submit Training Models</h1>
       <p style={{ marginBottom: 28 }}>
-        Contribute anonymised 3D dental model sets to the ML training dataset. Each submission requires three model files and a ground-truth PAR score verified by your supervising clinician.
+        Contribute anonymised 3D dental model sets to the ML training dataset. Each submission requires
+        three model files and a ground-truth PAR score verified by your supervising orthodontist.
       </p>
 
       {/* Progress steps */}
@@ -91,9 +97,7 @@ export default function TrainingSubmit() {
                   alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700,
                   background: done ? 'var(--green)' : active ? 'var(--blue-mid)' : 'var(--gray-200)',
                   color: done || active ? '#fff' : 'var(--gray-600)',
-                }}>
-                  {done ? '✓' : n}
-                </div>
+                }}>{done ? '✓' : n}</div>
                 <span style={{ fontSize: 13, fontWeight: active ? 600 : 400, color: active ? 'var(--blue-dark)' : 'var(--text-muted)' }}>
                   {label}
                 </span>
@@ -104,7 +108,7 @@ export default function TrainingSubmit() {
         })}
       </div>
 
-      {/* ── Step 1 ───────────────────────────────────────────────── */}
+      {/* ── Step 1 ──────────────────────────────────────────────── */}
       {step === 1 && (
         <div className="card" style={{ maxWidth: 560 }}>
           <div className="card-title">Step 1 — Case Details</div>
@@ -127,8 +131,8 @@ export default function TrainingSubmit() {
               <input type="number" min={0} max={200}
                 value={meta.groundTruthPar}
                 onChange={e => setMeta(m => ({ ...m, groundTruthPar: e.target.value }))}
-                placeholder="Verified by supervising clinician" required />
-              <span className="form-hint">The weighted PAR score provided by your supervising clinician.</span>
+                placeholder="Verified by supervising orthodontist" required />
+              <span className="form-hint">The weighted PAR score provided by your supervising orthodontist.</span>
             </div>
             <div className="form-group">
               <label>Source Description (optional)</label>
@@ -137,16 +141,21 @@ export default function TrainingSubmit() {
                 placeholder="e.g. University clinic teaching collection — Cohort 2023" />
             </div>
             <div className="form-group">
-              <label>Assign to Reviewer *</label>
+              <label>Assign to Orthodontist Reviewer *</label>
               <select value={meta.reviewerId}
                 onChange={e => setMeta(m => ({ ...m, reviewerId: e.target.value }))}
                 required>
-                <option value="">Select a dentist or orthodontist</option>
+                <option value="">Select an orthodontist reviewer…</option>
+                {reviewers.length === 0 && (
+                  <option disabled value="">No orthodontists registered yet</option>
+                )}
                 {reviewers.map(r => (
-                  <option key={r.id} value={r.id}>{r.name} ({r.role})</option>
+                  <option key={r.id} value={r.id}>Dr. {r.name}</option>
                 ))}
               </select>
-              <span className="form-hint">The selected professional will review and approve your submission.</span>
+              <span className="form-hint">
+                Only registered orthodontists are shown. They will review and approve your submission.
+              </span>
             </div>
             <button className="btn btn-primary" disabled={saving}>
               {saving ? <span className="spinner" /> : 'Next: Upload Models →'}
@@ -155,7 +164,7 @@ export default function TrainingSubmit() {
         </div>
       )}
 
-      {/* ── Step 2 ───────────────────────────────────────────────── */}
+      {/* ── Step 2 ──────────────────────────────────────────────── */}
       {step === 2 && (
         <div className="card" style={{ maxWidth: 680 }}>
           <div className="card-title">Step 2 — Upload 3D Model Files</div>
@@ -163,7 +172,11 @@ export default function TrainingSubmit() {
             Upload the three dental scan files for this training set. Each file must be in STL or OBJ format, max 50 MB.
           </p>
 
-          <ModelUploadSlots files={files} onChange={(k, f) => { setFiles(p => ({ ...p, [k]: f })); setFileErrors(e => ({ ...e, [k]: null })) }} errors={fileErrors} />
+          <ModelUploadSlots
+            files={files}
+            onChange={(k, f) => { setFiles(p => ({ ...p, [k]: f })); setFileErrors(e => ({ ...e, [k]: null })) }}
+            errors={fileErrors}
+          />
 
           {uploadErr && <div className="alert alert-error" style={{ marginTop: 14 }}>{uploadErr}</div>}
 
@@ -176,19 +189,20 @@ export default function TrainingSubmit() {
         </div>
       )}
 
-      {/* ── Step 3 ───────────────────────────────────────────────── */}
+      {/* ── Step 3 ──────────────────────────────────────────────── */}
       {step === 3 && (
         <div className="card" style={{ maxWidth: 480, textAlign: 'center', padding: 40 }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
           <h2 style={{ marginBottom: 8 }}>Submission Complete!</h2>
           <p style={{ marginBottom: 24, fontSize: 14 }}>
-            Your 3D model set has been submitted for review. An admin will approve or reject it shortly.
+            Your 3D model set has been submitted for review. The assigned orthodontist will approve or reject it shortly.
           </p>
           <div className="flex gap-8" style={{ justifyContent: 'center' }}>
             <button className="btn btn-primary" onClick={() => navigate('/training')}>View My Submissions</button>
-            <button className="btn btn-outline" onClick={() => { setStep(1); setFiles({}); setMeta({ anonymisedLabel: '', groundTruthPar: '', sourceDescription: '', reviewerId: '' }) }}>
-              Submit Another
-            </button>
+            <button className="btn btn-outline" onClick={() => {
+              setStep(1); setFiles({})
+              setMeta({ anonymisedLabel: '', groundTruthPar: '', sourceDescription: '', reviewerId: '' })
+            }}>Submit Another</button>
           </div>
         </div>
       )}

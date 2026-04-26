@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { patientApi, caseApi } from '../api/api'
+import { useAuth } from '../context/AuthContext'
 
 export default function PatientDetail() {
   const { id } = useParams()
+  const { user, isAdmin, isOrthodontist } = useAuth()
   const [patient, setPatient] = useState(null)
   const [cases, setCases]     = useState([])
   const [loading, setLoading] = useState(true)
@@ -12,8 +14,7 @@ export default function PatientDetail() {
   useEffect(() => { load() }, [id])
 
   async function load() {
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
       const [{ data: p }, { data: c }] = await Promise.all([
         patientApi.get(id),
@@ -30,6 +31,10 @@ export default function PatientDetail() {
   if (error)   return <div className="page"><div className="alert alert-error">{error}</div></div>
   if (!patient) return <div className="page"><div className="alert alert-error">Patient not found.</div></div>
 
+  // Find the assigned orthodontist from cases
+  const assignedOrtho = cases.find(c => c.createdBy)?.createdBy
+  const orthoDisplay  = assignedOrtho ? `Dr. ${assignedOrtho.name}` : '—'
+
   return (
     <div className="page">
       <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>
@@ -38,25 +43,29 @@ export default function PatientDetail() {
         <span>{patient.name}</span>
       </div>
 
-      <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
+      {isAdmin() && (
+        <div className="alert alert-info" style={{ marginBottom: 16 }}>
+          👁 You are viewing this patient record as <strong>Administrator</strong>. Case editing is restricted to orthodontists.
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
         <div>
           <h1>{patient.name}</h1>
-          <span className="font-mono text-sm" style={{ color: 'var(--text-muted)' }}>
-            {patient.referenceId}
-          </span>
+          <span className="font-mono text-sm" style={{ color: 'var(--text-muted)' }}>{patient.referenceId}</span>
         </div>
-        {/* FIXED: patient.id now correctly serialized (removed @JsonIgnore from entity) */}
-        <Link to={`/patients/${patient.id}/cases/new`} className="btn btn-primary">
-          + New Case
-        </Link>
+        {isOrthodontist() && (
+          <Link to={`/patients/${patient.id}/cases/new`} className="btn btn-primary">+ New Case</Link>
+        )}
       </div>
 
       {/* Info card */}
       <div className="card" style={{ marginBottom: 24 }}>
         <div className="card-title">Patient Details</div>
-        <div className="row">
+        <div className="row" style={{ flexWrap: 'wrap', gap: 16 }}>
           <InfoRow label="Date of Birth" value={patient.dateOfBirth ?? '—'} />
           <InfoRow label="Contact"       value={patient.contact ?? '—'} />
+          <InfoRow label="Assigned Orthodontist" value={orthoDisplay} />
           <InfoRow label="Status" value={
             <span className={`badge ${patient.isArchived ? 'badge-gray' : 'badge-green'}`}>
               {patient.isArchived ? 'Archived' : 'Active'}
@@ -70,13 +79,15 @@ export default function PatientDetail() {
       {cases.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>
           No cases yet.{' '}
-          <Link to={`/patients/${patient.id}/cases/new`} style={{ color: 'var(--blue-mid)' }}>
-            Create the first case →
-          </Link>
+          {isOrthodontist() && (
+            <Link to={`/patients/${patient.id}/cases/new`} style={{ color: 'var(--blue-mid)' }}>
+              Create the first case →
+            </Link>
+          )}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {cases.map(c => <CaseRow key={c.id} c={c} />)}
+          {cases.map(c => <CaseRow key={c.id} c={c} isAdmin={isAdmin()} isOrthodontist={isOrthodontist()} />)}
         </div>
       )}
     </div>
@@ -92,15 +103,17 @@ function InfoRow({ label, value }) {
   )
 }
 
-function CaseRow({ c }) {
+function CaseRow({ c, isAdmin, isOrthodontist }) {
   const stageBadge = c.stage === 'PRE'
     ? <span className="badge badge-blue">Pre-treatment</span>
     : <span className="badge badge-green">Post-treatment</span>
 
+  const creatorName = c.createdBy ? `Dr. ${c.createdBy.name}` : null
+
   return (
     <div className="card" style={{ padding: '16px 20px' }}>
-      <div className="flex items-center justify-between">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           {stageBadge}
           {c.isFinalized
             ? <span className="badge badge-gray">Finalised</span>
@@ -110,12 +123,20 @@ function CaseRow({ c }) {
               PAR: {c.parScore.totalWeighted}
             </span>
           )}
+          {creatorName && (
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{creatorName}</span>
+          )}
         </div>
-        <div className="flex items-center gap-8">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
             {new Date(c.createdAt).toLocaleDateString()}
           </span>
-          <Link to={`/cases/${c.id}`} className="btn btn-outline btn-sm">Open</Link>
+          {isOrthodontist() && (
+            <Link to={`/cases/${c.id}`} className="btn btn-outline btn-sm">Open</Link>
+          )}
+          {isAdmin && (
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>Read-only</span>
+          )}
         </div>
       </div>
       {c.notes && <p style={{ fontSize: 13, marginTop: 8 }}>{c.notes}</p>}

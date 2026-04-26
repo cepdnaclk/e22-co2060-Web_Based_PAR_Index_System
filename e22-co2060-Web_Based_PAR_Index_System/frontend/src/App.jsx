@@ -35,41 +35,41 @@ export default function App() {
       <Route element={<RequireAuth><Layout /></RequireAuth>}>
         <Route path="/dashboard" element={<Dashboard />} />
 
-        {/* Clinical — dentist / orthodontist / admin */}
+        {/* Patients — orthodontist can create/edit; admin can only view */}
         <Route path="/patients" element={
-          <RequireAuth roles={['DENTIST','ORTHODONTIST','ADMIN']}>
+          <RequireAuth roles={['ORTHODONTIST','ADMIN']}>
             <PatientList />
           </RequireAuth>
         }/>
         <Route path="/patients/:id" element={
-          <RequireAuth roles={['DENTIST','ORTHODONTIST','ADMIN']}>
+          <RequireAuth roles={['ORTHODONTIST','ADMIN']}>
             <PatientDetail />
           </RequireAuth>
         }/>
         <Route path="/patients/:patientId/cases/new" element={
-          <RequireAuth roles={['DENTIST','ORTHODONTIST','ADMIN']}>
+          <RequireAuth roles={['ORTHODONTIST']}>
             <NewCase />
           </RequireAuth>
         }/>
         <Route path="/cases/:id" element={
-          <RequireAuth roles={['DENTIST','ORTHODONTIST','ADMIN']}>
+          <RequireAuth roles={['ORTHODONTIST']}>
             <CaseDetail />
           </RequireAuth>
         }/>
 
-        {/* Training — undergraduate / admin */}
+        {/* Training — undergraduate only */}
         <Route path="/training/submit" element={
-          <RequireAuth roles={['UNDERGRADUATE','ADMIN']}>
+          <RequireAuth roles={['UNDERGRADUATE']}>
             <TrainingSubmit />
           </RequireAuth>
         }/>
         <Route path="/training" element={
-          <RequireAuth roles={['UNDERGRADUATE','ADMIN']}>
+          <RequireAuth roles={['UNDERGRADUATE']}>
             <TrainingList />
           </RequireAuth>
         }/>
         <Route path="/training/review" element={
-          <RequireAuth roles={['DENTIST','ORTHODONTIST','ADMIN']}>
+          <RequireAuth roles={['ORTHODONTIST','ADMIN']}>
             <TrainingReview />
           </RequireAuth>
         }/>

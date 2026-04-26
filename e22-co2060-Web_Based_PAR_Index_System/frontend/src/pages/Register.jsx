@@ -4,7 +4,7 @@ import { authApi } from '../api/api'
 import { useAuth } from '../context/AuthContext'
 
 const ROLES = [
-  { value: 'DENTIST',       label: 'Dentist',                desc: 'Manage patient cases and compute PAR scores' },
+  { value: 'ADMIN',         label: 'Administrator',          desc: 'View patient details and assigned orthodontists' },
   { value: 'ORTHODONTIST',  label: 'Orthodontist',           desc: 'Full clinical access for orthodontic cases' },
   { value: 'UNDERGRADUATE', label: 'Dental Undergraduate',   desc: 'Submit 3D models for ML training dataset' },
 ]
@@ -12,7 +12,7 @@ const ROLES = [
 export default function Register() {
   const { login }   = useAuth()
   const navigate    = useNavigate()
-  const [form, setForm]     = useState({ name: '', email: '', password: '', role: 'DENTIST' })
+  const [form, setForm]     = useState({ name: '', email: '', password: '', role: 'ADMIN' })
   const [error, setError]   = useState('')
   const [loading, setLoading] = useState(false)
 

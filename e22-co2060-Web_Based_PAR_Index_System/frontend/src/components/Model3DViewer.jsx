@@ -1,19 +1,19 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import * as THREE from 'three'
-import { STLLoader }      from 'three/examples/jsm/loaders/STLLoader.js'
-import { OBJLoader }      from 'three/examples/jsm/loaders/OBJLoader.js'
-import { OrbitControls }  from 'three/examples/jsm/controls/OrbitControls.js'
+import { STLLoader }     from 'three/examples/jsm/loaders/STLLoader.js'
+import { OBJLoader }     from 'three/examples/jsm/loaders/OBJLoader.js'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 /**
- * Model3DViewer
+ * Model3DViewer — responsive, enhanced Three.js viewer
  * Props:
- *   modelUrl       string  – URL of the STL/OBJ file
- *   modelType      string  – 'stl' | 'obj'
- *   placementMode  bool    – when true, clicks place a landmark
- *   activeLandmark string  – name currently being placed
- *   placedPoints   object  – { [name]: {x,y,z} }
- *   onPointPlaced  fn(name, {x,y,z})
- *   width / height number
+ *   modelUrl       string
+ *   modelType      string  'stl' | 'obj'
+ *   placementMode  bool
+ *   activeLandmark string
+ *   placedPoints   object
+ *   onPointPlaced  fn
+ *   label          string  optional label shown above viewer
  */
 export default function Model3DViewer({
   modelUrl,
@@ -22,53 +22,80 @@ export default function Model3DViewer({
   activeLandmark = null,
   placedPoints   = {},
   onPointPlaced  = null,
-  width          = 520,
-  height         = 440,
+  label          = null,
+  width          = null,   // if null, fills container
+  height         = 380,
 }) {
-  const mountRef = useRef(null)
-  const stateRef = useRef({
+  const containerRef = useRef(null)
+  const mountRef     = useRef(null)
+  const stateRef     = useRef({
     scene: null, camera: null, renderer: null,
     controls: null, meshes: [], markers: {}, labels: {}, animFrame: null,
+    loadedObject: null,
   })
+  const [loadStatus, setLoadStatus] = useState('idle') // idle | loading | loaded | error
+  const [loadPct, setLoadPct]       = useState(0)
 
-  // ── Build Three.js scene ─────────────────────────────────────────────
+  // ── Build / rebuild scene when URL changes ───────────────────────
   useEffect(() => {
-    if (!modelUrl) return
+    if (!modelUrl || !mountRef.current) return
     const s = stateRef.current
+    setLoadStatus('loading')
+    setLoadPct(0)
+
+    // Compute actual pixel size
+    const w = width  ?? mountRef.current.offsetWidth  ?? 400
+    const h = height
 
     s.scene = new THREE.Scene()
-    s.scene.background = new THREE.Color(0xf0f4f8)
+    s.scene.background = new THREE.Color(0xecf2f8)
 
-    s.camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 2000)
-    s.camera.position.set(0, 0, 120)
+    s.camera = new THREE.PerspectiveCamera(52, w / h, 0.1, 3000)
+    s.camera.position.set(0, 30, 140)
 
-    s.renderer = new THREE.WebGLRenderer({ antialias: true })
-    s.renderer.setSize(width, height)
+    s.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
+    s.renderer.setSize(w, h)
     s.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     s.renderer.shadowMap.enabled = true
     s.renderer.shadowMap.type    = THREE.PCFSoftShadowMap
-    if (mountRef.current) mountRef.current.appendChild(s.renderer.domElement)
+    s.renderer.outputColorSpace  = THREE.SRGBColorSpace
+    mountRef.current.appendChild(s.renderer.domElement)
 
     s.controls = new OrbitControls(s.camera, s.renderer.domElement)
     s.controls.enableDamping = true
-    s.controls.dampingFactor = 0.07
-    s.controls.minDistance   = 5
-    s.controls.maxDistance   = 500
+    s.controls.dampingFactor = 0.06
+    s.controls.minDistance   = 3
+    s.controls.maxDistance   = 800
+    s.controls.enablePan     = true
 
-    const ambient = new THREE.AmbientLight(0xffffff, 0.55)
-    s.scene.add(ambient)
-    const key = new THREE.DirectionalLight(0xffffff, 0.85)
-    key.position.set(80, 120, 60)
-    key.castShadow = true
+    // Lighting rig
+    s.scene.add(new THREE.AmbientLight(0xffffff, 0.7))
+    const key = new THREE.DirectionalLight(0xffffff, 1.1)
+    key.position.set(100, 150, 80); key.castShadow = true
     s.scene.add(key)
-    const fill = new THREE.DirectionalLight(0xb0c8e8, 0.4)
-    fill.position.set(-80, -40, -60)
+    const fill = new THREE.DirectionalLight(0xc5d8f0, 0.5)
+    fill.position.set(-80, -50, -60)
     s.scene.add(fill)
+    const rim = new THREE.DirectionalLight(0xfff4e0, 0.35)
+    rim.position.set(0, -100, 100)
+    s.scene.add(rim)
 
-    s.scene.add(new THREE.GridHelper(300, 30, 0xcccccc, 0xdddddd))
-    s.scene.add(new THREE.AxesHelper(15))
+    // Grid
+    const grid = new THREE.GridHelper(400, 40, 0xb8ccd8, 0xcddae3)
+    grid.position.y = -40
+    s.scene.add(grid)
 
-    loadModel(modelUrl, modelType, s)
+    loadModel(modelUrl, modelType, s, setLoadPct, setLoadStatus)
+
+    // Handle resize
+    const ro = new ResizeObserver(() => {
+      if (!mountRef.current || !s.renderer || !s.camera) return
+      const nw = mountRef.current.offsetWidth
+      s.camera.aspect = nw / height
+      s.camera.updateProjectionMatrix()
+      s.renderer.setSize(nw, height)
+    })
+    ro.observe(mountRef.current)
 
     const animate = () => {
       s.animFrame = requestAnimationFrame(animate)
@@ -79,30 +106,31 @@ export default function Model3DViewer({
 
     return () => {
       cancelAnimationFrame(s.animFrame)
-      if (mountRef.current && s.renderer.domElement.parentNode === mountRef.current) {
+      ro.disconnect()
+      if (mountRef.current && s.renderer?.domElement?.parentNode === mountRef.current) {
         mountRef.current.removeChild(s.renderer.domElement)
       }
-      s.renderer.dispose()
-      s.controls.dispose()
+      s.renderer?.dispose()
+      s.controls?.dispose()
       s.meshes  = []
       s.markers = {}
       s.labels  = {}
+      s.loadedObject = null
     }
   }, [modelUrl, modelType]) // eslint-disable-line
 
-  // ── Sync marker spheres ──────────────────────────────────────────────
+  // ── Sync markers ────────────────────────────────────────────────
   useEffect(() => {
     const s = stateRef.current
     if (!s.scene) return
     syncMarkers(s, placedPoints)
   }, [placedPoints])
 
-  // ── Raycasting click handler ─────────────────────────────────────────
+  // ── Click → raycasting ──────────────────────────────────────────
   const handleClick = useCallback((e) => {
     if (!placementMode || !activeLandmark || !onPointPlaced) return
     const s = stateRef.current
     if (!s.renderer || !s.meshes.length) return
-
     const rect  = s.renderer.domElement.getBoundingClientRect()
     const mouse = new THREE.Vector2(
       ((e.clientX - rect.left) / rect.width)  * 2 - 1,
@@ -117,127 +145,190 @@ export default function Model3DViewer({
     }
   }, [placementMode, activeLandmark, onPointPlaced])
 
+  // ── Reset camera ────────────────────────────────────────────────
+  const resetView = () => {
+    const s = stateRef.current
+    if (!s.camera || !s.controls) return
+    s.camera.position.set(0, 30, 140)
+    s.controls.target.set(0, 0, 0)
+    s.controls.update()
+  }
+
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
-      {placementMode && activeLandmark && (
+    <div ref={containerRef} style={{ width: width ? `${width}px` : '100%', display: 'flex', flexDirection: 'column', gap: 0 }}>
+      {label && (
         <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
-          background: 'rgba(37,99,235,0.9)', color: '#fff',
-          padding: '7px 14px', fontSize: 13, fontWeight: 600,
-          borderRadius: '8px 8px 0 0', pointerEvents: 'none',
-          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'var(--blue-dark)', color: '#fff',
+          padding: '6px 12px', fontSize: 12, fontWeight: 700,
+          borderRadius: '8px 8px 0 0', letterSpacing: '.05em', textTransform: 'uppercase',
+          display: 'flex', alignItems: 'center', gap: 6,
         }}>
-          <span>📍</span>
-          Click on model to place:&nbsp;
-          <code style={{
-            background: 'rgba(255,255,255,0.22)', borderRadius: 4,
-            padding: '1px 8px', fontFamily: 'monospace',
-          }}>{activeLandmark}</code>
+          🦷 {label}
         </div>
       )}
-      <div
-        ref={mountRef}
-        onClick={handleClick}
-        style={{
-          width, height,
-          border: placementMode ? '2.5px solid #2563eb' : '1.5px solid #d1d5db',
-          borderRadius: 8,
-          background: '#f0f4f8',
-          cursor: placementMode ? 'crosshair' : 'grab',
-          overflow: 'hidden',
-        }}
-      />
+
+      {placementMode && activeLandmark && (
+        <div style={{
+          background: 'rgba(37,99,235,0.92)', color: '#fff',
+          padding: '7px 14px', fontSize: 13, fontWeight: 600,
+          borderRadius: label ? 0 : '8px 8px 0 0',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <span>📍</span> Click model to place: <code style={{ background: 'rgba(255,255,255,.2)', borderRadius: 4, padding: '1px 8px' }}>{activeLandmark}</code>
+        </div>
+      )}
+
+      <div style={{ position: 'relative' }}>
+        {loadStatus === 'loading' && (
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            background: '#ecf2f8', zIndex: 5, borderRadius: label ? 0 : 8,
+            gap: 12,
+          }}>
+            <div className="spinner spinner-lg" />
+            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Loading 3D model… {loadPct}%</div>
+          </div>
+        )}
+        {loadStatus === 'error' && (
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            background: '#fff5f5', zIndex: 5, borderRadius: 8, gap: 8,
+          }}>
+            <span style={{ fontSize: 32 }}>⚠️</span>
+            <div style={{ fontSize: 13, color: 'var(--coral)', fontWeight: 600 }}>Failed to load model</div>
+          </div>
+        )}
+
+        <div
+          ref={mountRef}
+          onClick={handleClick}
+          style={{
+            width: '100%', height,
+            border: placementMode ? '2.5px solid var(--blue-mid)' : '1.5px solid var(--border)',
+            borderRadius: label || (placementMode && activeLandmark) ? '0 0 8px 8px' : 8,
+            background: '#ecf2f8',
+            cursor: placementMode ? 'crosshair' : 'grab',
+            overflow: 'hidden',
+          }}
+        />
+
+        {/* Controls overlay */}
+        <div style={{
+          position: 'absolute', bottom: 10, right: 10,
+          display: 'flex', flexDirection: 'column', gap: 4,
+        }}>
+          <button
+            onClick={resetView}
+            title="Reset view"
+            style={{
+              width: 32, height: 32, borderRadius: 6, border: '1px solid var(--border)',
+              background: 'rgba(255,255,255,0.92)', cursor: 'pointer', fontSize: 14,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 1px 4px rgba(0,0,0,.15)',
+            }}>⌂</button>
+        </div>
+
+        {loadStatus === 'loaded' && (
+          <div style={{
+            position: 'absolute', bottom: 10, left: 10,
+            fontSize: 11, color: 'rgba(80,100,120,0.7)', background: 'rgba(255,255,255,0.7)',
+            padding: '3px 8px', borderRadius: 4,
+          }}>
+            Drag to rotate • Scroll to zoom • Shift+drag to pan
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
-// ── Load STL or OBJ ──────────────────────────────────────────────────────
-function loadModel(url, type, s) {
-  const ext = (type || '').toLowerCase()
+// ── Load STL or OBJ ─────────────────────────────────────────────────
+function loadModel(url, type, s, setLoadPct, setLoadStatus) {
+  const ext = (type || url?.split('.').pop() || '').toLowerCase()
   let loader
   if (ext === 'stl')      loader = new STLLoader()
   else if (ext === 'obj') loader = new OBJLoader()
-  else { console.error('Unsupported type:', type); return }
+  else { setLoadStatus('error'); return }
 
-  loader.load(url, (raw) => {
-    let obj
-    if (raw.isBufferGeometry) {
-      const mat = new THREE.MeshPhongMaterial({
-        color: 0x7ec8e3, specular: 0x333333, shininess: 60, side: THREE.DoubleSide,
-      })
-      obj = new THREE.Mesh(raw, mat)
-      obj.castShadow = obj.receiveShadow = true
-    } else {
-      obj = raw
-      obj.traverse(c => {
-        if (c.isMesh) {
-          c.material = new THREE.MeshPhongMaterial({ color: 0x7ec8e3, specular: 0x333333, shininess: 60 })
-          c.castShadow = c.receiveShadow = true
-        }
-      })
-    }
+  loader.load(url,
+    (raw) => {
+      let obj
+      if (raw.isBufferGeometry) {
+        if (!raw.hasAttribute('normal')) raw.computeVertexNormals()
+        const mat = new THREE.MeshPhongMaterial({
+          color: 0x8ecae6, specular: 0x334455, shininess: 65,
+          side: THREE.DoubleSide,
+        })
+        obj = new THREE.Mesh(raw, mat)
+        obj.castShadow = obj.receiveShadow = true
+      } else {
+        obj = raw
+        obj.traverse(c => {
+          if (c.isMesh) {
+            c.material = new THREE.MeshPhongMaterial({ color: 0x8ecae6, specular: 0x334455, shininess: 65 })
+            c.castShadow = c.receiveShadow = true
+          }
+        })
+      }
 
-    const box    = new THREE.Box3().setFromObject(obj)
-    const centre = box.getCenter(new THREE.Vector3())
-    const size   = box.getSize(new THREE.Vector3())
-    const scale  = 80 / Math.max(size.x, size.y, size.z)
-    obj.scale.setScalar(scale)
-    obj.position.sub(centre.multiplyScalar(scale))
-    s.scene.add(obj)
+      const box    = new THREE.Box3().setFromObject(obj)
+      const centre = box.getCenter(new THREE.Vector3())
+      const size   = box.getSize(new THREE.Vector3())
+      const scale  = 90 / Math.max(size.x, size.y, size.z)
+      obj.scale.setScalar(scale)
+      obj.position.sub(centre.multiplyScalar(scale))
+      s.scene.add(obj)
+      s.loadedObject = obj
 
-    obj.traverse(c => { if (c.isMesh) s.meshes.push(c) })
-  },
-  (p) => { if (p.total) console.debug('Load:', Math.round(p.loaded / p.total * 100) + '%') },
-  (e) => console.error('Load error:', e))
+      obj.traverse(c => { if (c.isMesh) s.meshes.push(c) })
+      setLoadStatus('loaded')
+      setLoadPct(100)
+    },
+    (p) => {
+      if (p.total) setLoadPct(Math.round(p.loaded / p.total * 100))
+    },
+    (e) => { console.error('3D load error:', e); setLoadStatus('error') }
+  )
 }
 
-// ── Marker / label management ────────────────────────────────────────────
+// ── Markers ──────────────────────────────────────────────────────────
 const MARKER_MAT = new THREE.MeshStandardMaterial({
-  color: 0xef4444, roughness: 0.3, metalness: 0.1,
-  emissive: 0xcc0000, emissiveIntensity: 0.2,
+  color: 0xef4444, roughness: 0.3, metalness: 0.1, emissive: 0xcc0000, emissiveIntensity: 0.25,
 })
 
 function syncMarkers(s, placedPoints) {
-  // Remove stale
   Object.keys(s.markers).forEach(name => {
     if (!placedPoints[name]) {
       s.scene.remove(s.markers[name])
       if (s.labels[name]) s.scene.remove(s.labels[name])
-      delete s.markers[name]
-      delete s.labels[name]
+      delete s.markers[name]; delete s.labels[name]
     }
   })
-  // Add / update
   Object.entries(placedPoints).forEach(([name, { x, y, z }]) => {
     if (s.markers[name]) {
       s.markers[name].position.set(x, y, z)
       if (s.labels[name]) s.labels[name].position.set(x, y + 3.5, z)
     } else {
-      const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.4, 14, 14), MARKER_MAT)
-      sphere.position.set(x, y, z)
-      s.scene.add(sphere)
-      s.markers[name] = sphere
-
+      const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.6, 16, 16), MARKER_MAT)
+      sphere.position.set(x, y, z); s.scene.add(sphere); s.markers[name] = sphere
       const label = makeLabel(name)
-      label.position.set(x, y + 3.5, z)
-      s.scene.add(label)
-      s.labels[name] = label
+      label.position.set(x, y + 3.5, z); s.scene.add(label); s.labels[name] = label
     }
   })
 }
 
 function makeLabel(text) {
   const canvas = document.createElement('canvas')
-  canvas.width = 128; canvas.height = 32
+  canvas.width = 140; canvas.height = 34
   const ctx = canvas.getContext('2d')
-  ctx.fillStyle = 'rgba(15,15,30,0.78)'
-  ctx.beginPath(); ctx.roundRect(0, 0, 128, 32, 6); ctx.fill()
-  ctx.fillStyle = '#fff'
-  ctx.font = 'bold 13px monospace'
+  ctx.fillStyle = 'rgba(15,15,30,0.82)'
+  ctx.beginPath(); ctx.roundRect(0, 0, 140, 34, 6); ctx.fill()
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 13px monospace'
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-  ctx.fillText(text, 64, 16)
+  ctx.fillText(text, 70, 17)
   const mat = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true })
-  const spr = new THREE.Sprite(mat)
-  spr.scale.set(9, 2.2, 1)
+  const spr = new THREE.Sprite(mat); spr.scale.set(10, 2.4, 1)
   return spr
 }

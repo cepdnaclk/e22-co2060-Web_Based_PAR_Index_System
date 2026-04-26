@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { adminApi, trainingApi } from '../api/api'
 
-const ROLES      = ['DENTIST', 'ORTHODONTIST', 'UNDERGRADUATE', 'ADMIN']
+const ROLES      = ['ORTHODONTIST', 'UNDERGRADUATE', 'ADMIN']
 const ROLE_BADGE = {
-  DENTIST:       'badge-blue',
   ORTHODONTIST:  'badge-blue',
   UNDERGRADUATE: 'badge-purple',
   ADMIN:         'badge-coral',
@@ -108,7 +107,7 @@ function UsersTab() {
             <tbody>
               {filtered.map(u => (
                 <tr key={u.id}>
-                  <td style={{ fontWeight: 500 }}>{u.name}</td>
+                  <td style={{ fontWeight: 500 }}>{u.role === 'ORTHODONTIST' ? `Dr. ${u.name}` : u.name}</td>
                   <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{u.email}</td>
                   <td>
                     <span className={`badge ${ROLE_BADGE[u.role] ?? 'badge-gray'}`}>{u.role}</span>
