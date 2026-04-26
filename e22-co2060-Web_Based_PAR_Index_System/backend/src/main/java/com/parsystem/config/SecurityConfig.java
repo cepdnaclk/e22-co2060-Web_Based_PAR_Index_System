@@ -51,6 +51,7 @@ public class SecurityConfig {
                 .requestMatchers(PUBLIC_URLS).permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/v1/training-sets/**").hasAnyRole("UNDERGRADUATE", "ADMIN")
+                .requestMatchers("/api/v1/cases/files/**").authenticated()
                 .requestMatchers("/api/v1/patients/**", "/api/v1/cases/**")
                     .hasAnyRole("DENTIST", "ORTHODONTIST", "ADMIN")
                 .anyRequest().authenticated()

@@ -48,11 +48,11 @@ public class PARScore {
     @Column(name = "lower_anterior", nullable = false)
     private int lowerAnterior;
 
-    @Min(0) @Max(5)
+    @Min(0) @Max(7)
     @Column(name = "buccal_left", nullable = false)
     private int buccalLeft;
 
-    @Min(0) @Max(5)
+    @Min(0) @Max(7)
     @Column(name = "buccal_right", nullable = false)
     private int buccalRight;
 
