@@ -25,6 +25,11 @@ public class AuthService {
             throw new IllegalArgumentException("Email already registered.");
         }
 
+        // Admin accounts are pre-seeded — public registration cannot grant ADMIN role
+        if (request.getRole() == User.Role.ADMIN) {
+            throw new IllegalArgumentException("Administrator accounts cannot be created through self-registration.");
+        }
+
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())

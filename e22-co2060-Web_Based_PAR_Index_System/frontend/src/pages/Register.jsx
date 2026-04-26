@@ -3,16 +3,16 @@ import { Link, useNavigate } from 'react-router-dom'
 import { authApi } from '../api/api'
 import { useAuth } from '../context/AuthContext'
 
+// ADMIN is intentionally excluded — admin accounts are pre-seeded by the system.
 const ROLES = [
-  { value: 'ADMIN',         label: 'Administrator',          desc: 'View patient details and assigned orthodontists' },
-  { value: 'ORTHODONTIST',  label: 'Orthodontist',           desc: 'Full clinical access for orthodontic cases' },
-  { value: 'UNDERGRADUATE', label: 'Dental Undergraduate',   desc: 'Submit 3D models for ML training dataset' },
+  { value: 'ORTHODONTIST',  label: 'Orthodontist',         desc: 'Full clinical access for orthodontic cases' },
+  { value: 'UNDERGRADUATE', label: 'Dental Undergraduate', desc: 'Submit 3D models for ML training dataset' },
 ]
 
 export default function Register() {
   const { login }   = useAuth()
   const navigate    = useNavigate()
-  const [form, setForm]     = useState({ name: '', email: '', password: '', role: 'ADMIN' })
+  const [form, setForm]     = useState({ name: '', email: '', password: '', role: 'ORTHODONTIST' })
   const [error, setError]   = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -59,7 +59,7 @@ export default function Register() {
             <span className="form-hint">Minimum 8 characters</span>
           </div>
 
-          {/* Role cards */}
+          {/* Role selection — ADMIN excluded from self-registration */}
           <div className="form-group">
             <label>I am a…</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
