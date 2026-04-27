@@ -80,10 +80,10 @@ export default function TrainingReview() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: selected ? '1fr 1.5fr' : '1fr', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: selected ? 'minmax(0,1fr) minmax(0,1.5fr)' : '1fr', gap: 20, alignItems: 'start', minWidth: 0 }}>
 
         {/* ── Submissions List ──────────────────────────────────── */}
-        <div>
+        <div style={{ minWidth: 0 }}>
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             {loading ? (
               <div className="centered" style={{ padding: 40 }}><div className="spinner" /></div>
@@ -125,7 +125,7 @@ export default function TrainingReview() {
 
         {/* ── Submission Details ────────────────────────────────── */}
         {selected && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0, overflow: 'hidden' }}>
 
             {/* Header card */}
             <div className="card">
