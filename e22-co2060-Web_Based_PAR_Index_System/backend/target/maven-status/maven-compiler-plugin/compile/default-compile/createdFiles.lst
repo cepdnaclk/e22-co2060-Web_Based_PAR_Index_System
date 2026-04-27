@@ -4,14 +4,12 @@ com\parsystem\entity\LandmarkPoint$Slot.class
 com\parsystem\dto\Model3DFileDto$Response.class
 com\parsystem\entity\PARScore$PARScoreBuilder.class
 com\parsystem\entity\OrthoCase.class
-com\parsystem\controller\UserController.class
 com\parsystem\service\PatientService.class
 com\parsystem\dto\LandmarkDto$LandmarkResponse.class
 com\parsystem\entity\Model3DFile$Slot.class
 com\parsystem\entity\Model3DFile$Model3DFileBuilder.class
 com\parsystem\repository\PatientRepository.class
 com\parsystem\dto\PatientDto$Response$ResponseBuilder.class
-com\parsystem\controller\TrainingSetController.class
 com\parsystem\dto\LandmarkDto$SubmitRequest.class
 com\parsystem\service\AuthService.class
 com\parsystem\repository\OrthoCaseRepository.class

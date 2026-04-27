@@ -13,14 +13,14 @@ VALUES
   (
     'Admin E22014',
     'e22014@eng.pdn.ac.lk',
-    '$2b$10$.iYcemmjWRvMtD/kIENYa.2aMLyl4zTPE5oz6NmhLlVDN46slYvjW',
+    '$2b$10$W36T9/PwC/Nv84vZi/DsyuRQOHodoBGL6Y0hiuz3ymzEYqpN0i68S',
     'ADMIN',
     TRUE
   ),
   (
     'Admin E22035',
     'e22035@eng.pdn.ac.lk',
-    '$2b$10$9ltl6NSIMGRTPt2cbn5/q.58icnTQtbrDkx5.0YD0avqGR1TIAk5m',
+    '$2b$10$wQdCxXf9wZ6zL8nCQQdvEOqAldIUItLv5P.B7dN4K7qo3bFwOC1ji',
     'ADMIN',
     TRUE
   );
