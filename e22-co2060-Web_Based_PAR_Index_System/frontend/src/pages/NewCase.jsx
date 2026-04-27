@@ -21,7 +21,7 @@ export default function NewCase() {
       try {
         const { data: existingCases } = await caseApi.listByPatient(patientId)
         const hasFinalisedPre = existingCases.some(
-          c => c.stage === 'PRE' && c.isFinalized
+          c => c.stage === 'PRE' && (c.finalized === true || c.isFinalized === true)
         )
         const hasPre = existingCases.some(c => c.stage === 'PRE')
 
@@ -112,8 +112,10 @@ export default function NewCase() {
             <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
               {stageOptions.map(s => {
                 const isSelected = stage === s.value
-                // POST is locked if no finalised PRE exists
-                const isLocked = s.value === 'POST' && stageInfo?.type !== 'auto-post'
+                // PRE locked once a finalised PRE exists; POST locked until one does
+                const isLocked =
+                  (s.value === 'POST' && stageInfo?.type !== 'auto-post') ||
+                  (s.value === 'PRE'  && stageInfo?.type === 'auto-post')
                 return (
                   <label key={s.value} style={{
                     flex: 1, padding: '14px 16px',
@@ -132,7 +134,9 @@ export default function NewCase() {
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>{s.desc}</div>
                     {isLocked && (
                       <div style={{ fontSize: 11, color: 'var(--coral)', marginTop: 4 }}>
-                        Requires a finalised pre-treatment case
+                        {s.value === 'PRE'
+                          ? 'Pre-treatment is complete for this patient'
+                          : 'Requires a finalised pre-treatment case'}
                       </div>
                     )}
                   </label>
