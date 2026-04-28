@@ -6,6 +6,8 @@ import com.parsystem.repository.*;
 import com.parsystem.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -23,10 +25,14 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/cases")
 @RequiredArgsConstructor
 public class CaseController {
+
+    @Value("${app.storage.base-dir}")
+    private String baseDir;
 
     private final OrthoCaseRepository caseRepository;
     private final PatientRepository patientRepository;
@@ -35,7 +41,6 @@ public class CaseController {
     private final StorageService storageService;
     private final AuditService auditService;
 
-    /** Create a new orthodontic case linked to a patient. Only ORTHODONTIST may create cases. */
     @PostMapping
     @PreAuthorize("hasRole('ORTHODONTIST')")
     public ResponseEntity<OrthoCase> create(
@@ -47,7 +52,6 @@ public class CaseController {
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new IllegalArgumentException("Patient not found: " + patientId));
 
-        // Enforce: POST stage can only be created after a PRE case is finalised
         if (stage == OrthoCase.Stage.POST) {
             boolean preFinalised = caseRepository.findByPatientId(patientId).stream()
                     .anyMatch(c -> c.getStage() == OrthoCase.Stage.PRE && c.isFinalized());
@@ -69,14 +73,12 @@ public class CaseController {
         return ResponseEntity.ok(saved);
     }
 
-    /** Get all cases for a patient. ORTHODONTIST and ADMIN can read. */
     @GetMapping("/patient/{patientId}")
     @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
     public ResponseEntity<List<OrthoCase>> getByPatient(@PathVariable Long patientId) {
         return ResponseEntity.ok(caseRepository.findByPatientId(patientId));
     }
 
-    /** Get a single case. ORTHODONTIST and ADMIN can read. */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
     public ResponseEntity<OrthoCase> getById(@PathVariable Long id) {
@@ -84,17 +86,12 @@ public class CaseController {
                 .orElseThrow(() -> new IllegalArgumentException("Case not found: " + id)));
     }
 
-    /**
-     * Upload three 3D model files for a case.
-     * Expects multipart fields: upperFile, lowerFile, buccalFile
-     * Only ORTHODONTIST can upload.
-     */
     @PostMapping("/{id}/models")
     @PreAuthorize("hasRole('ORTHODONTIST')")
     public ResponseEntity<Map<String, String>> uploadModels(
             @PathVariable Long id,
-            @RequestPart("upperFile")  MultipartFile upperFile,
-            @RequestPart("lowerFile")  MultipartFile lowerFile,
+            @RequestPart("upperFile") MultipartFile upperFile,
+            @RequestPart("lowerFile") MultipartFile lowerFile,
             @RequestPart("buccalFile") MultipartFile buccalFile,
             @AuthenticationPrincipal User user) throws IOException {
 
@@ -105,19 +102,14 @@ public class CaseController {
             throw new IllegalStateException("Cannot upload files to a finalised case.");
         }
 
-        saveModel(upperFile,  "UPPER",  id, orthoCase, user);
-        saveModel(lowerFile,  "LOWER",  id, orthoCase, user);
+        saveModel(upperFile, "UPPER", id, orthoCase, user);
+        saveModel(lowerFile, "LOWER", id, orthoCase, user);
         saveModel(buccalFile, "BUCCAL", id, orthoCase, user);
 
         auditService.log(user, "UPLOAD_3D_MODELS", "OrthoCase", id, "3 files uploaded");
         return ResponseEntity.ok(Map.of("message", "3D models uploaded successfully."));
     }
 
-    /**
-     * Serve a 3D model file for in-browser viewing.
-     * GET /api/v1/cases/{id}/models/{slot}
-     * ORTHODONTIST and ADMIN can access.
-     */
     @GetMapping("/{id}/models/{slot}")
     @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
     public ResponseEntity<Resource> getModelFile(
@@ -133,21 +125,25 @@ public class CaseController {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Model file not found for slot: " + slot));
 
-        Path filePath = Paths.get(modelFile.getStoragePath());
+        Path filePath = Paths.get(baseDir)
+                .resolve(modelFile.getStoragePath())
+                .normalize();
+
         Resource resource = new UrlResource(filePath.toUri());
 
         if (!resource.exists() || !resource.isReadable()) {
-            throw new RuntimeException("File not found or not readable: " + filePath);
+            log.warn("Model file not readable: {}", filePath);
+            return ResponseEntity.notFound().build();
         }
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "inline; filename=\"" + modelFile.getFileName() + "\"")
+                .header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(resource);
     }
 
-    /** Compute PAR score for a case. Only ORTHODONTIST. */
     @PostMapping("/{id}/calculate")
     @PreAuthorize("hasRole('ORTHODONTIST')")
     public ResponseEntity<PARScore> calculate(
@@ -158,11 +154,6 @@ public class CaseController {
         return ResponseEntity.ok(parCalculatorService.calculate(id, request, user));
     }
 
-    /**
-     * Finalise a case (locks it — no further edits).
-     * After finalising PRE, POST cases become available.
-     * POST cases can be finalised too — supports multiple post-treatment sessions.
-     */
     @PostMapping("/{id}/finalize")
     @PreAuthorize("hasRole('ORTHODONTIST')")
     public ResponseEntity<Map<String, String>> finalize(
@@ -191,12 +182,9 @@ public class CaseController {
         return ResponseEntity.ok(Map.of("message", msg));
     }
 
-    // ── helper ────────────────────────────────────────────────────────
-
     private void saveModel(MultipartFile file, String slot, Long refId,
                            OrthoCase orthoCase, User uploader) throws IOException {
 
-        // Remove existing file for this slot before saving a new one
         model3DFileRepository.findAll().stream()
                 .filter(m -> m.getOrthoCase() != null
                         && m.getOrthoCase().getId().equals(refId)

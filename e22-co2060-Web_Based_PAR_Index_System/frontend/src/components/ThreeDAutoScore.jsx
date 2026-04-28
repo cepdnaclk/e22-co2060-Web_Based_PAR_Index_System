@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
-import Model3DViewer    from './Model3DViewer'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import Case3DViewer     from './Case3DViewer'
 import LandmarkPanel, { LANDMARK_DEFS } from './LandmarkPanel'
 import AutoScoreResult  from './AutoScoreResult'
 import { landmarkApi } from '../api/api'
+import { calcAllMeasurements } from '../utils/measurements'
 
 /**
  * ThreeDAutoScore
@@ -16,18 +17,6 @@ import { landmarkApi } from '../api/api'
  */
 
 const SLOTS = ['UPPER', 'LOWER', 'BUCCAL']
-
-/** Derive viewer-compatible model info from model files array. */
-function pickModel(modelFiles, slot) {
-  if (!modelFiles?.length) return null
-  const slotName = slot // 'UPPER' | 'LOWER' | 'BUCCAL'
-  const file = modelFiles.find(f => f.slot === slotName) ?? modelFiles[0]
-  if (!file) return null
-  // Build URL: backend serves uploaded files via /api/v1/files/{id}
-  const url  = `/api/v1/cases/files/${file.id}`
-  const ext  = file.fileName?.split('.').pop()?.toLowerCase() ?? 'stl'
-  return { url, type: ext }
-}
 
 export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
   // Which arch we're viewing in the 3D viewer
@@ -44,6 +33,14 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
   const [calculating, setCalculating] = useState(false)
   const [error,       setError]       = useState('')
   const [autoResult,  setAutoResult]  = useState(null)
+
+  // Live measurements derived from placed points
+  const measurements = useMemo(() => {
+    return calcAllMeasurements(
+      placedPoints.UPPER,
+      placedPoints.LOWER,
+    )
+  }, [placedPoints])
 
   // Load any previously saved landmarks when the panel first opens
   useEffect(() => {
@@ -107,12 +104,6 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
     setActive(null)
     // Also delete from backend for this slot
     try {
-      const remaining = Object.entries(placedPoints)
-        .filter(([s]) => s !== viewSlot)
-        .flatMap(([s, pts]) =>
-          Object.entries(pts).map(([name, { x, y, z }]) => ({ slot: s, name, x, y, z }))
-        )
-      // Re-save remaining slots (simpler than a partial-delete endpoint)
       await landmarkApi.clear(caseId)
       for (const slot of SLOTS) {
         const pts2 = slot === viewSlot ? {} : placedPoints[slot]
@@ -144,8 +135,6 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
   const totalPlaced   = SLOTS.reduce((n, s) => n + Object.keys(placedPoints[s]).length, 0)
   const totalRequired = 3 // at least one point per slot to enable auto-calc
   const savedCount    = SLOTS.filter(s => savedSlots[s]).length
-
-  const currentModel  = pickModel(modelFiles, viewSlot)
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif' }}>
@@ -193,7 +182,7 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
         </div>
       )}
 
-      {/* Slot selector tabs */}
+      {/* Slot selector tabs — now driven by Case3DViewer via onSlotChange */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
         {SLOTS.map(slot => (
           <button
@@ -229,44 +218,56 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
 
       {/* Main layout: viewer + panel */}
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        {/* 3D viewer */}
+        {/* 3D viewer — replaced Model3DViewer with Case3DViewer */}
         <div style={{ flex: 1, minWidth: 320 }}>
-          {currentModel ? (
-            <Model3DViewer
-              modelUrl={currentModel.url}
-              modelType={currentModel.type}
-              placementMode={!!activeLandmark}
-              activeLandmark={activeLandmark}
-              placedPoints={placedPoints[viewSlot]}
-              onPointPlaced={handlePointPlaced}
-              width={530}
-              height={450}
-            />
-          ) : (
-            <div style={{
-              width: 530, height: 450, border: '2px dashed #d1d5db',
-              borderRadius: 8, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-              color: '#9ca3af', gap: 10, background: '#fafafa',
-            }}>
-              <span style={{ fontSize: 36 }}>📁</span>
-              <span style={{ fontSize: 14 }}>
-                No 3D model uploaded for {viewSlot} arch
-              </span>
-              <span style={{ fontSize: 12 }}>
-                Upload models in the "3D Dental Models" section above
-              </span>
-            </div>
-          )}
+          <Case3DViewer
+            caseId={caseId}
+            modelFiles={modelFiles}
+            placementMode={!!activeLandmark}
+            activeLandmark={activeLandmark}
+            placedPoints={placedPoints}
+            activeSlot={viewSlot}
+            onSlotChange={(slot) => { setViewSlot(slot); setActive(null) }}
+            onPointPlaced={(slot, name, coords) => {
+              if (slot !== viewSlot) return
+              handlePointPlaced(name, coords)
+            }}
+          />
 
-          {/* Quick coordinate display */}
-          {activeLandmark && (
+          {/* Live Measurements Panel */}
+          {(measurements.overjet !== null || measurements.overbite !== null) && (
             <div style={{
-              marginTop: 8, padding: '8px 12px',
-              background: '#eff6ff', border: '1px solid #bfdbfe',
-              borderRadius: 6, fontSize: 12, color: '#1e40af',
+              marginTop: 10,
+              padding: '12px 16px',
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              borderRadius: 8,
+              display: 'flex',
+              gap: 24,
+              flexWrap: 'wrap',
+              fontSize: 13,
             }}>
-              📍 Placement mode active — click anywhere on the 3D model surface
+              <strong style={{ color: '#14532d', fontSize: 12, width: '100%' }}>
+                📏 Live Measurements (from placed landmarks)
+              </strong>
+              {measurements.overjet !== null && (
+                <div>
+                  <span style={{ color: '#6b7280' }}>Overjet: </span>
+                  <strong style={{ color: '#1d4ed8' }}>{measurements.overjet} mm</strong>
+                </div>
+              )}
+              {measurements.overbite !== null && (
+                <div>
+                  <span style={{ color: '#6b7280' }}>Overbite: </span>
+                  <strong style={{ color: '#16a34a' }}>{measurements.overbite} mm</strong>
+                </div>
+              )}
+              {measurements.centerlineDeviation !== null && (
+                <div>
+                  <span style={{ color: '#6b7280' }}>Centreline dev: </span>
+                  <strong style={{ color: '#b45309' }}>{measurements.centerlineDeviation} mm</strong>
+                </div>
+              )}
             </div>
           )}
 

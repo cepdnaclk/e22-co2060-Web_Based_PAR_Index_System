@@ -54,11 +54,19 @@ export const caseApi = {
       timeout: 120000,
     }),
 
-  // Serve clinical model file for viewing
-  getModelFileUrl: (caseId, slot) => `/api/v1/cases/${caseId}/models/${slot}`,
+  // ✅ FIX: Return path RELATIVE to baseURL ('/api/v1') — no leading /api/v1/.
+  //    axios will combine baseURL + this path correctly:
+  //    '/api/v1' + 'cases/4/models/UPPER' → '/api/v1/cases/4/models/UPPER'
+  //    Previously returned '/api/v1/cases/...' which caused DOUBLED prefix:
+  //    '/api/v1' + '/api/v1/cases/...' → '/api/v1/api/v1/cases/...' → 500
+  getModelFileUrl: (caseId, slot) => `cases/${caseId}/models/${slot}`,
 
   calculate: (id, data) => api.post(`/cases/${id}/calculate`, data),
-  finalize:  id         => api.post(`/cases/${id}/finalize`),
+
+  calculatePAR: (id, measurements) =>
+    api.post('/par/calculate', { caseId: id, ...measurements }),
+
+  finalize: id => api.post(`/cases/${id}/finalize`),
 }
 
 // ── Training Sets ─────────────────────────────────────────────────────────
@@ -74,19 +82,20 @@ export const trainingApi = {
   listMy:       ()           => api.get('/training-sets/my'),
   listAssigned: ()           => api.get('/training-sets/assigned'),
   listAll:      (status)     => api.get('/training-sets', { params: status ? { status } : {} }),
-  // Returns only ORTHODONTIST users
   getReviewers: ()           => api.get('/training-sets/reviewers'),
   review:       (id, params) => api.put(`/training-sets/${id}/review`, null, { params }),
   delete:       id           => api.delete(`/training-sets/${id}`),
-  getModelUrl:  (setId, slot) => `/api/v1/training-sets/${setId}/models/${slot}`,
+
+  // ✅ FIX: Same as above — relative path only, no /api/v1/ prefix.
+  getModelUrl:  (setId, slot) => `training-sets/${setId}/models/${slot}`,
 }
 
 // ── Landmarks & Auto-Score ────────────────────────────────────────────────
 export const landmarkApi = {
-  submit:       (caseId, data) => api.post(`/cases/${caseId}/landmarks`, data),
-  get:          (caseId)       => api.get(`/cases/${caseId}/landmarks`),
-  clear:        (caseId)       => api.delete(`/cases/${caseId}/landmarks`),
-  autoCalculate:(caseId)       => api.post(`/cases/${caseId}/auto-calculate`),
+  submit:        (caseId, data) => api.post(`/cases/${caseId}/landmarks`, data),
+  get:           (caseId)       => api.get(`/cases/${caseId}/landmarks`),
+  clear:         (caseId)       => api.delete(`/cases/${caseId}/landmarks`),
+  autoCalculate: (caseId)       => api.post(`/cases/${caseId}/auto-calculate`),
 }
 
 // ── Admin ─────────────────────────────────────────────────────────────────

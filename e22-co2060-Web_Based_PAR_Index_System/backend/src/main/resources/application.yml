@@ -5,7 +5,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/par_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
-    password: HAhamed03@
+    password: Annoor-akyash.15
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
@@ -31,6 +31,11 @@ spring:
 
 server:
   port: 8081
+
+  tomcat:
+    max-swallow-size: -1
+    connection-timeout: 60000
+
   error:
     include-message: always
     include-binding-errors: always

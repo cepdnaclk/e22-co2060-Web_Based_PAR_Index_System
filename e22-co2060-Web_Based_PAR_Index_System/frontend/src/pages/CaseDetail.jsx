@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { caseApi, patientApi } from '../api/api'
+import { caseApi, landmarkApi } from '../api/api'
 import ModelUploadSlots from '../components/ModelUploadSlots'
 import Model3DViewer    from '../components/Model3DViewer'
 import ThreeDAutoScore  from '../components/ThreeDAutoScore'
+import { calcLandmarkImprovement } from '../utils/measurements'
 
 // ── PAR components exactly per Green2016b Figure 1 / Table 2 ─────────────
 // Each sub-field: { key, label, max }
@@ -152,6 +153,18 @@ const CLASS_BADGE = {
   'No Different or Worse': 'badge-coral',
 }
 
+// ── Reshape flat landmark API array → { UPPER:{}, LOWER:{}, BUCCAL:{} } ──
+function reshapeLandmarks(apiArray) {
+  const out = { UPPER: {}, LOWER: {}, BUCCAL: {} }
+  if (!Array.isArray(apiArray)) return out
+  apiArray.forEach(lm => {
+    if (out[lm.slot]) {
+      out[lm.slot][lm.pointName] = { x: lm.x, y: lm.y, z: lm.z }
+    }
+  })
+  return out
+}
+
 export default function CaseDetail() {
   const { id }       = useParams()
   const { user }     = useAuth()
@@ -162,21 +175,26 @@ export default function CaseDetail() {
   const [pageError, setPageError] = useState('')
 
   // 3D upload state
-  const [files, setFiles]         = useState({})
+  const [files, setFiles]           = useState({})
   const [fileErrors, setFileErrors] = useState({})
   const [uploading, setUploading]   = useState(false)
   const [uploadMsg, setUploadMsg]   = useState('')
 
   // PAR detail form
-  const [detail, setDetail]     = useState(EMPTY_DETAIL())
-  const [calculating, setCalc]  = useState(false)
-  const [calcError, setCalcError] = useState('')
+  const [detail, setDetail]         = useState(EMPTY_DETAIL())
+  const [calculating, setCalc]      = useState(false)
+  const [calcError, setCalcError]   = useState('')
   const [scoringTab, setScoringTab] = useState('manual')
 
   // 3D viewer
   const [viewerSlot, setViewerSlot] = useState('UPPER')
 
-  useEffect(() => { load() }, [id])
+  // Before/After comparison — landmark data for PRE and POST cases
+  const [preCaseLandmarks,  setPreCaseLandmarks]  = useState(null) // { UPPER:{}, LOWER:{}, BUCCAL:{} }
+  const [postCaseLandmarks, setPostCaseLandmarks] = useState(null)
+  const [comparisonLoading, setComparisonLoading] = useState(false)
+
+  useEffect(() => { load() }, [id]) // eslint-disable-line
 
   async function load() {
     setLoading(true); setPageError('')
@@ -187,9 +205,37 @@ export default function CaseDetail() {
       const { data: cases } = await caseApi.listByPatient(data.patient?.id)
       setAllCases(cases)
       setDetail(EMPTY_DETAIL())
+
+      // ── Load landmarks for Before/After panel ─────────────────────
+      await loadComparisonLandmarks(data, cases)
     } catch (err) {
       setPageError(err.response?.data?.message || 'Failed to load case.')
     } finally { setLoading(false) }
+  }
+
+  async function loadComparisonLandmarks(thisCase, cases) {
+    setComparisonLoading(true)
+    try {
+      if (thisCase.stage === 'POST') {
+        const { data: postLms } = await landmarkApi.get(thisCase.id)
+        setPostCaseLandmarks(reshapeLandmarks(postLms))
+
+        const preSibling = cases.find(c => c.stage === 'PRE')
+        if (preSibling) {
+          const { data: preLms } = await landmarkApi.get(preSibling.id)
+          setPreCaseLandmarks(reshapeLandmarks(preLms))
+        }
+      } else {
+        const { data: preLms } = await landmarkApi.get(thisCase.id)
+        setPreCaseLandmarks(reshapeLandmarks(preLms))
+        setPostCaseLandmarks(null)
+      }
+    } catch {
+      setPreCaseLandmarks(null)
+      setPostCaseLandmarks(null)
+    } finally {
+      setComparisonLoading(false)
+    }
   }
 
   // ── File upload ──────────────────────────────────────────────────
@@ -238,11 +284,11 @@ export default function CaseDetail() {
   }
 
   // ── Post-treatment guard ─────────────────────────────────────────
-  const preCase = allCases.find(c => c.stage === 'PRE')
+  const preCase      = allCases.find(c => c.stage === 'PRE')
   const preFinalised = preCase?.isFinalized === true
 
-  if (loading)   return <div className="centered"><div className="spinner spinner-lg" /></div>
-  if (pageError) return <div className="page"><div className="alert alert-error">{pageError}</div></div>
+  if (loading)    return <div className="centered"><div className="spinner spinner-lg" /></div>
+  if (pageError)  return <div className="page"><div className="alert alert-error">{pageError}</div></div>
   if (!orthoCase) return <div className="page"><div className="alert alert-error">Case not found.</div></div>
 
   const c          = orthoCase
@@ -256,6 +302,19 @@ export default function CaseDetail() {
 
   const uploadSuccess = uploadMsg === 'success'
   const uploadError   = uploadMsg.startsWith('error:') ? uploadMsg.slice(6) : ''
+
+  const postPAR = isPost ? c.parScore?.totalWeighted : null
+  const prePAR  = isPost ? allCases.find(c2 => c2.stage === 'PRE')?.parScore?.totalWeighted : null
+  const parDelta = (postPAR != null && prePAR != null) ? prePAR - postPAR : null
+
+  const hasComparisonData =
+    isPost &&
+    preCaseLandmarks  != null &&
+    postCaseLandmarks != null &&
+    ['UPPER','LOWER','BUCCAL'].some(slot =>
+      Object.keys(preCaseLandmarks[slot] ?? {}).length > 0 &&
+      Object.keys(postCaseLandmarks[slot] ?? {}).length > 0
+    )
 
   // Guard: post-treatment requires pre-treatment to be finalised
   if (isPost && !preFinalised) {
@@ -338,6 +397,21 @@ export default function CaseDetail() {
                   </span>
                 </div>
               )}
+              {parDelta != null && (
+                <div style={{
+                  marginTop: 12, padding: '6px 12px',
+                  background: parDelta > 0 ? '#f0fdf4' : '#fef2f2',
+                  border: `1px solid ${parDelta > 0 ? '#86efac' : '#fca5a5'}`,
+                  borderRadius: 8, fontSize: 13,
+                }}>
+                  <span style={{ fontWeight: 700, color: parDelta > 0 ? '#15803d' : '#b91c1c' }}>
+                    {parDelta > 0 ? `↓ ${parDelta} pts improved` : `↑ ${Math.abs(parDelta)} pts worse`}
+                  </span>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                    vs. pre-treatment score of {prePAR}
+                  </div>
+                </div>
+              )}
             </div>
             <div style={{ flex: 1, minWidth: 240 }}>
               <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
@@ -355,9 +429,9 @@ export default function CaseDetail() {
                     { label: 'Lower Anterior',   key: 'lowerAnterior', wt: 1 },
                     { label: 'Buccal (Right)',    key: 'buccalRight',   wt: 1 },
                     { label: 'Buccal (Left)',     key: 'buccalLeft',    wt: 1 },
-                    { label: 'Overjet',          key: 'overjet',       wt: 6 },
-                    { label: 'Overbite',         key: 'overbite',      wt: 2 },
-                    { label: 'Centreline',       key: 'centreline',    wt: 4 },
+                    { label: 'Overjet',           key: 'overjet',       wt: 6 },
+                    { label: 'Overbite',          key: 'overbite',      wt: 2 },
+                    { label: 'Centreline',        key: 'centreline',    wt: 4 },
                   ].map(row => (
                     <tr key={row.key} style={{ borderTop: '1px solid var(--border)' }}>
                       <td style={{ padding: '4px 6px', color: 'var(--text-muted)' }}>{row.label}</td>
@@ -381,8 +455,151 @@ export default function CaseDetail() {
         </div>
       )}
 
-      {/* ── 3D Models Display (always visible if uploaded) ───────── */}
-      {modelsOk && (
+      {/* ── Before / After 3D Landmark Improvement Panel ─────────── */}
+      {isPost && (
+        <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid #8b5cf6' }}>
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            📊 Treatment Improvement — Landmark Displacement
+            {comparisonLoading && <span className="spinner" style={{ marginLeft: 6 }} />}
+          </div>
+
+          {!comparisonLoading && !hasComparisonData && (
+            <div className="alert alert-info" style={{ fontSize: 13 }}>
+              Landmark displacement comparison will appear here once both the pre-treatment
+              and post-treatment 3D landmarks have been placed and saved via the
+              <strong> 3D Auto-Detect</strong> tab.
+            </div>
+          )}
+
+          {!comparisonLoading && hasComparisonData && (
+            <>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>
+                Each bar shows how far a landmark moved between pre- and post-treatment scans.
+                <span style={{ marginLeft: 8, color: '#16a34a', fontWeight: 600 }}>Green &lt;2 mm</span>,{' '}
+                <span style={{ color: '#d97706', fontWeight: 600 }}>Amber 2–5 mm</span>,{' '}
+                <span style={{ color: '#dc2626', fontWeight: 600 }}>Red &gt;5 mm</span>.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+                {['UPPER', 'LOWER', 'BUCCAL'].map(slot => {
+                  const improvements = calcLandmarkImprovement(
+                    preCaseLandmarks[slot]  ?? {},
+                    postCaseLandmarks[slot] ?? {},
+                  )
+                  if (!improvements.length) return null
+
+                  const avgDisp = improvements.reduce((s, i) => s + i.displacement, 0) / improvements.length
+
+                  return (
+                    <div key={slot} style={{
+                      border: '1.5px solid var(--border)',
+                      borderRadius: 8,
+                      overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        background: slot === 'UPPER' ? '#1e40af'
+                                  : slot === 'LOWER' ? '#166534'
+                                  : '#92400e',
+                        color: '#fff',
+                        padding: '8px 14px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}>
+                        <span style={{ fontWeight: 700, fontSize: 13 }}>
+                          {slot === 'UPPER' ? '🦷 Upper Arch'
+                           : slot === 'LOWER' ? '🦷 Lower Arch'
+                           : '📐 Buccal'}
+                        </span>
+                        <span style={{ fontSize: 12, opacity: 0.85 }}>
+                          avg {avgDisp.toFixed(1)} mm · {improvements.length} pts
+                        </span>
+                      </div>
+
+                      <div style={{ padding: '10px 14px' }}>
+                        {improvements.map(({ name, displacement }) => {
+                          const pct   = Math.min((displacement / 10) * 100, 100)
+                          const color = displacement < 2 ? '#16a34a'
+                                      : displacement < 5 ? '#d97706'
+                                      : '#dc2626'
+                          return (
+                            <div key={name} style={{
+                              display: 'flex', alignItems: 'center',
+                              gap: 8, marginBottom: 7,
+                            }}>
+                              <span style={{
+                                width: 52, fontSize: 11,
+                                color: 'var(--text-muted)',
+                                fontFamily: 'monospace',
+                                flexShrink: 0,
+                              }}>
+                                {name}
+                              </span>
+                              <div style={{
+                                flex: 1, height: 8,
+                                background: '#f3f4f6',
+                                borderRadius: 4,
+                                overflow: 'hidden',
+                              }}>
+                                <div style={{
+                                  width: `${pct}%`,
+                                  height: '100%',
+                                  background: color,
+                                  borderRadius: 4,
+                                  transition: 'width 0.5s ease',
+                                }} />
+                              </div>
+                              <span style={{
+                                fontSize: 11, fontWeight: 700,
+                                color, width: 48,
+                                textAlign: 'right',
+                                flexShrink: 0,
+                              }}>
+                                {displacement.toFixed(1)} mm
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      <div style={{
+                        borderTop: '1px solid var(--border)',
+                        padding: '6px 14px',
+                        background: 'var(--blue-pale)',
+                        fontSize: 12,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}>
+                        <span style={{ color: 'var(--text-muted)' }}>
+                          Max: <strong style={{ color: '#b91c1c' }}>
+                            {Math.max(...improvements.map(i => i.displacement)).toFixed(1)} mm
+                          </strong>
+                        </span>
+                        <span style={{ color: 'var(--text-muted)' }}>
+                          Min: <strong style={{ color: '#15803d' }}>
+                            {Math.min(...improvements.map(i => i.displacement)).toFixed(1)} mm
+                          </strong>
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── 3D Models Display ────────────────────────────────────────
+          FIX: Only render the simple model viewer when the 3D scoring tab is
+          NOT active.  Both Model3DViewer (here) and Case3DViewer (inside
+          ThreeDAutoScore) each create a THREE.WebGLRenderer.  Browsers cap
+          live WebGL contexts at ~8–16 per page.  Having both mounted at the
+          same time doubles the context count and accelerates eviction →
+          CONTEXT_LOST_WEBGL.  Hiding this card when scoringTab === '3d'
+          ensures only one renderer is ever alive at a time.
+      ─────────────────────────────────────────────────────────────── */}
+      {modelsOk && scoringTab !== '3d' && (
         <div className="card" style={{ marginBottom: 24 }}>
           <div className="card-title">
             3D Dental Models
@@ -446,7 +663,11 @@ export default function CaseDetail() {
           </div>
 
           {scoringTab === '3d' && (
-            <ThreeDAutoScore caseId={c.id} modelFiles={c.modelFiles} onScored={() => load()} />
+            <ThreeDAutoScore
+              caseId={c.id}
+              modelFiles={c.modelFiles}
+              onScored={() => load()}
+            />
           )}
 
           {scoringTab === 'manual' && (
@@ -494,19 +715,16 @@ export default function CaseDetail() {
                   Scored canine to terminal molar. Anterio-posterior and vertical exclude the canine from transverse.
                 </p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  {/* Antero-posterior */}
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--blue-dark)', marginBottom: 8 }}>Anterio-posterior</div>
                     <ScoreSelect label="Right" options={BUCCAL_AP_OPTIONS} value={detail.buccal_ap_right} onChange={v => setDetail(d => ({ ...d, buccal_ap_right: v }))} />
                     <ScoreSelect label="Left"  options={BUCCAL_AP_OPTIONS} value={detail.buccal_ap_left}  onChange={v => setDetail(d => ({ ...d, buccal_ap_left:  v }))} />
                   </div>
-                  {/* Transverse */}
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--blue-dark)', marginBottom: 8 }}>Transverse</div>
                     <ScoreSelect label="Right" options={BUCCAL_TRANS_OPTIONS} value={detail.buccal_trans_right} onChange={v => setDetail(d => ({ ...d, buccal_trans_right: v }))} />
                     <ScoreSelect label="Left"  options={BUCCAL_TRANS_OPTIONS} value={detail.buccal_trans_left}  onChange={v => setDetail(d => ({ ...d, buccal_trans_left:  v }))} />
                   </div>
-                  {/* Vertical */}
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--blue-dark)', marginBottom: 8 }}>Vertical</div>
                     <ScoreSelect label="Right" options={BUCCAL_VERT_OPTIONS} value={detail.buccal_vert_right} onChange={v => setDetail(d => ({ ...d, buccal_vert_right: v }))} />
