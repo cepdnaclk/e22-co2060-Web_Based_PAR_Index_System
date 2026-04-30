@@ -3,8 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { caseApi, landmarkApi } from '../api/api'
 import ModelUploadSlots from '../components/ModelUploadSlots'
-import Model3DViewer    from '../components/Model3DViewer'
-import ThreeDAutoScore  from '../components/ThreeDAutoScore'
+import Model3DViewer from '../components/Model3DViewer'
+import ThreeDAutoScore from '../components/ThreeDAutoScore'
 import { calcLandmarkImprovement } from '../utils/measurements'
 
 // ── PAR components exactly per Green2016b Figure 1 / Table 2 ─────────────
@@ -116,9 +116,9 @@ function computeWeighted(d) {
   // Lower anterior — weight ×1
   const lowerRaw = Math.max(d.lower_3_2, d.lower_2_1, d.lower_1_1, d.lower_1_2, d.lower_2_3)
   // Buccal — highest of right/left for each plane, weight ×1
-  const buccalAP    = Math.max(d.buccal_ap_right, d.buccal_ap_left)
+  const buccalAP = Math.max(d.buccal_ap_right, d.buccal_ap_left)
   const buccalTrans = Math.max(d.buccal_trans_right, d.buccal_trans_left)
-  const buccalVert  = Math.max(d.buccal_vert_right, d.buccal_vert_left)
+  const buccalVert = Math.max(d.buccal_vert_right, d.buccal_vert_left)
   // Overjet — positive overjet or reverse overjet (take higher), weight ×6
   const overjetRaw = Math.max(d.overjet_pos, d.overjet_neg)
   // Overbite — overbite or open bite (take higher), weight ×2
@@ -127,8 +127,8 @@ function computeWeighted(d) {
   const centrelineRaw = d.centreline
 
   const unweighted = upperRaw + lowerRaw + buccalAP + buccalTrans + buccalVert + overjetRaw + overbiteRaw + centrelineRaw
-  const weighted   = upperRaw*1 + lowerRaw*1 + buccalAP*1 + buccalTrans*1 + buccalVert*1
-                   + overjetRaw*6 + overbiteRaw*2 + centrelineRaw*4
+  const weighted = upperRaw * 1 + lowerRaw * 1 + buccalAP * 1 + buccalTrans * 1 + buccalVert * 1
+    + overjetRaw * 6 + overbiteRaw * 2 + centrelineRaw * 4
 
   return { unweighted, weighted, upperRaw, lowerRaw, buccalAP, buccalTrans, buccalVert, overjetRaw, overbiteRaw, centrelineRaw }
 }
@@ -139,17 +139,17 @@ function detailToApiScores(d) {
   return {
     upperAnterior: upperRaw,
     lowerAnterior: lowerRaw,
-    buccalRight:   Math.max(d.buccal_ap_right, d.buccal_trans_right, d.buccal_vert_right),
-    buccalLeft:    Math.max(d.buccal_ap_left,  d.buccal_trans_left,  d.buccal_vert_left),
-    overjet:       overjetRaw,
-    overbite:      overbiteRaw,
-    centreline:    centrelineRaw,
+    buccalRight: Math.max(d.buccal_ap_right, d.buccal_trans_right, d.buccal_vert_right),
+    buccalLeft: Math.max(d.buccal_ap_left, d.buccal_trans_left, d.buccal_vert_left),
+    overjet: overjetRaw,
+    overbite: overbiteRaw,
+    centreline: centrelineRaw,
   }
 }
 
 const CLASS_BADGE = {
-  'Greatly Improved':      'badge-green',
-  'Improved':              'badge-blue',
+  'Greatly Improved': 'badge-green',
+  'Improved': 'badge-blue',
   'No Different or Worse': 'badge-coral',
 }
 
@@ -166,31 +166,31 @@ function reshapeLandmarks(apiArray) {
 }
 
 export default function CaseDetail() {
-  const { id }       = useParams()
-  const { user }     = useAuth()
-  const navigate     = useNavigate()
+  const { id } = useParams()
+  const { user } = useAuth()
+  const navigate = useNavigate()
   const [orthoCase, setOrthoCase] = useState(null)
-  const [allCases, setAllCases]   = useState([])
-  const [loading, setLoading]     = useState(true)
+  const [allCases, setAllCases] = useState([])
+  const [loading, setLoading] = useState(true)
   const [pageError, setPageError] = useState('')
 
   // 3D upload state
-  const [files, setFiles]           = useState({})
+  const [files, setFiles] = useState({})
   const [fileErrors, setFileErrors] = useState({})
-  const [uploading, setUploading]   = useState(false)
-  const [uploadMsg, setUploadMsg]   = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadMsg, setUploadMsg] = useState('')
 
   // PAR detail form
-  const [detail, setDetail]         = useState(EMPTY_DETAIL())
-  const [calculating, setCalc]      = useState(false)
-  const [calcError, setCalcError]   = useState('')
+  const [detail, setDetail] = useState(EMPTY_DETAIL())
+  const [calculating, setCalc] = useState(false)
+  const [calcError, setCalcError] = useState('')
   const [scoringTab, setScoringTab] = useState('manual')
 
   // 3D viewer
   const [viewerSlot, setViewerSlot] = useState('UPPER')
 
   // Before/After comparison — landmark data for PRE and POST cases
-  const [preCaseLandmarks,  setPreCaseLandmarks]  = useState(null) // { UPPER:{}, LOWER:{}, BUCCAL:{} }
+  const [preCaseLandmarks, setPreCaseLandmarks] = useState(null) // { UPPER:{}, LOWER:{}, BUCCAL:{} }
   const [postCaseLandmarks, setPostCaseLandmarks] = useState(null)
   const [comparisonLoading, setComparisonLoading] = useState(false)
 
@@ -246,13 +246,13 @@ export default function CaseDetail() {
 
   const uploadModels = async () => {
     const errs = {}
-    ;['upperFile','lowerFile','buccalFile'].forEach(k => { if (!files[k]) errs[k] = 'Required' })
+      ;['upperFile', 'lowerFile', 'buccalFile'].forEach(k => { if (!files[k]) errs[k] = 'Required' })
     if (Object.keys(errs).length) { setFileErrors(errs); return }
     setUploading(true); setUploadMsg('')
     try {
       const fd = new FormData()
-      fd.append('upperFile',  files.upperFile)
-      fd.append('lowerFile',  files.lowerFile)
+      fd.append('upperFile', files.upperFile)
+      fd.append('lowerFile', files.lowerFile)
       fd.append('buccalFile', files.buccalFile)
       await caseApi.uploadModels(id, fd)
       setUploadMsg('success'); setFiles({})
@@ -284,34 +284,34 @@ export default function CaseDetail() {
   }
 
   // ── Post-treatment guard ─────────────────────────────────────────
-  const preCase      = allCases.find(c => c.stage === 'PRE')
+  const preCase = allCases.find(c => c.stage === 'PRE')
   const preFinalised = preCase?.finalized === true || preCase?.isFinalized === true
 
-  if (loading)    return <div className="centered"><div className="spinner spinner-lg" /></div>
-  if (pageError)  return <div className="page"><div className="alert alert-error">{pageError}</div></div>
+  if (loading) return <div className="centered"><div className="spinner spinner-lg" /></div>
+  if (pageError) return <div className="page"><div className="alert alert-error">{pageError}</div></div>
   if (!orthoCase) return <div className="page"><div className="alert alert-error">Case not found.</div></div>
 
-  const c          = orthoCase
-  const modelsOk   = (c.modelFiles?.length ?? 0) >= 3
-  const hasPAR     = !!c.parScore
-  const finalized  = c.finalized === true || c.isFinalized === true
-  const isPost     = c.stage === 'POST'
-  const drName     = `Dr. ${user?.name}`
+  const c = orthoCase
+  const modelsOk = (c.modelFiles?.length ?? 0) >= 3
+  const hasPAR = !!c.parScore
+  const finalized = c.finalized === true || c.isFinalized === true
+  const isPost = c.stage === 'POST'
+  const drName = `Dr. ${user?.name}`
 
   const { weighted: liveWeighted, unweighted: liveUnweighted } = computeWeighted(detail)
 
   const uploadSuccess = uploadMsg === 'success'
-  const uploadError   = uploadMsg.startsWith('error:') ? uploadMsg.slice(6) : ''
+  const uploadError = uploadMsg.startsWith('error:') ? uploadMsg.slice(6) : ''
 
   const postPAR = isPost ? c.parScore?.totalWeighted : null
-  const prePAR  = isPost ? allCases.find(c2 => c2.stage === 'PRE')?.parScore?.totalWeighted : null
+  const prePAR = isPost ? allCases.find(c2 => c2.stage === 'PRE')?.parScore?.totalWeighted : null
   const parDelta = (postPAR != null && prePAR != null) ? prePAR - postPAR : null
 
   const hasComparisonData =
     isPost &&
-    preCaseLandmarks  != null &&
+    preCaseLandmarks != null &&
     postCaseLandmarks != null &&
-    ['UPPER','LOWER','BUCCAL'].some(slot =>
+    ['UPPER', 'LOWER', 'BUCCAL'].some(slot =>
       Object.keys(preCaseLandmarks[slot] ?? {}).length > 0 &&
       Object.keys(postCaseLandmarks[slot] ?? {}).length > 0
     )
@@ -345,7 +345,7 @@ export default function CaseDetail() {
   const getModelUrl = (slot) => {
     const mf = c.modelFiles?.find(f => f.slot === slot)
     if (!mf) return null
-    return `/api/v1/cases/${id}/models/${slot}`
+    return caseApi.getModelFileUrl(id, slot)
   }
 
   return (
@@ -425,13 +425,13 @@ export default function CaseDetail() {
                 </thead>
                 <tbody>
                   {[
-                    { label: 'Upper Anterior',   key: 'upperAnterior', wt: 1 },
-                    { label: 'Lower Anterior',   key: 'lowerAnterior', wt: 1 },
-                    { label: 'Buccal (Right)',    key: 'buccalRight',   wt: 1 },
-                    { label: 'Buccal (Left)',     key: 'buccalLeft',    wt: 1 },
-                    { label: 'Overjet',           key: 'overjet',       wt: 6 },
-                    { label: 'Overbite',          key: 'overbite',      wt: 2 },
-                    { label: 'Centreline',        key: 'centreline',    wt: 4 },
+                    { label: 'Upper Anterior', key: 'upperAnterior', wt: 1 },
+                    { label: 'Lower Anterior', key: 'lowerAnterior', wt: 1 },
+                    { label: 'Buccal (Right)', key: 'buccalRight', wt: 1 },
+                    { label: 'Buccal (Left)', key: 'buccalLeft', wt: 1 },
+                    { label: 'Overjet', key: 'overjet', wt: 6 },
+                    { label: 'Overbite', key: 'overbite', wt: 2 },
+                    { label: 'Centreline', key: 'centreline', wt: 4 },
                   ].map(row => (
                     <tr key={row.key} style={{ borderTop: '1px solid var(--border)' }}>
                       <td style={{ padding: '4px 6px', color: 'var(--text-muted)' }}>{row.label}</td>
@@ -483,7 +483,7 @@ export default function CaseDetail() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
                 {['UPPER', 'LOWER', 'BUCCAL'].map(slot => {
                   const improvements = calcLandmarkImprovement(
-                    preCaseLandmarks[slot]  ?? {},
+                    preCaseLandmarks[slot] ?? {},
                     postCaseLandmarks[slot] ?? {},
                   )
                   if (!improvements.length) return null
@@ -498,8 +498,8 @@ export default function CaseDetail() {
                     }}>
                       <div style={{
                         background: slot === 'UPPER' ? '#1e40af'
-                                  : slot === 'LOWER' ? '#166534'
-                                  : '#92400e',
+                          : slot === 'LOWER' ? '#166534'
+                            : '#92400e',
                         color: '#fff',
                         padding: '8px 14px',
                         display: 'flex',
@@ -508,8 +508,8 @@ export default function CaseDetail() {
                       }}>
                         <span style={{ fontWeight: 700, fontSize: 13 }}>
                           {slot === 'UPPER' ? '🦷 Upper Arch'
-                           : slot === 'LOWER' ? '🦷 Lower Arch'
-                           : '📐 Buccal'}
+                            : slot === 'LOWER' ? '🦷 Lower Arch'
+                              : '📐 Buccal'}
                         </span>
                         <span style={{ fontSize: 12, opacity: 0.85 }}>
                           avg {avgDisp.toFixed(1)} mm · {improvements.length} pts
@@ -518,10 +518,10 @@ export default function CaseDetail() {
 
                       <div style={{ padding: '10px 14px' }}>
                         {improvements.map(({ name, displacement }) => {
-                          const pct   = Math.min((displacement / 10) * 100, 100)
+                          const pct = Math.min((displacement / 10) * 100, 100)
                           const color = displacement < 2 ? '#16a34a'
-                                      : displacement < 5 ? '#d97706'
-                                      : '#dc2626'
+                            : displacement < 5 ? '#d97706'
+                              : '#dc2626'
                           return (
                             <div key={name} style={{
                               display: 'flex', alignItems: 'center',
@@ -633,7 +633,7 @@ export default function CaseDetail() {
           </div>
           <ModelUploadSlots files={files} onChange={handleFileChange} errors={fileErrors} />
           {uploadSuccess && <div className="alert alert-success" style={{ marginTop: 12 }}>✅ 3D models uploaded successfully.</div>}
-          {uploadError   && <div className="alert alert-error"   style={{ marginTop: 12 }}>❌ {uploadError}</div>}
+          {uploadError && <div className="alert alert-error" style={{ marginTop: 12 }}>❌ {uploadError}</div>}
           <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={uploadModels} disabled={uploading}>
             {uploading ? <><span className="spinner" /> Uploading…</> : '⬆ Upload 3D Models'}
           </button>
@@ -719,17 +719,17 @@ export default function CaseDetail() {
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--blue-dark)', marginBottom: 8 }}>Anterio-posterior</div>
                     <ScoreSelect label="Right" options={BUCCAL_AP_OPTIONS} value={detail.buccal_ap_right} onChange={v => setDetail(d => ({ ...d, buccal_ap_right: v }))} />
-                    <ScoreSelect label="Left"  options={BUCCAL_AP_OPTIONS} value={detail.buccal_ap_left}  onChange={v => setDetail(d => ({ ...d, buccal_ap_left:  v }))} />
+                    <ScoreSelect label="Left" options={BUCCAL_AP_OPTIONS} value={detail.buccal_ap_left} onChange={v => setDetail(d => ({ ...d, buccal_ap_left: v }))} />
                   </div>
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--blue-dark)', marginBottom: 8 }}>Transverse</div>
                     <ScoreSelect label="Right" options={BUCCAL_TRANS_OPTIONS} value={detail.buccal_trans_right} onChange={v => setDetail(d => ({ ...d, buccal_trans_right: v }))} />
-                    <ScoreSelect label="Left"  options={BUCCAL_TRANS_OPTIONS} value={detail.buccal_trans_left}  onChange={v => setDetail(d => ({ ...d, buccal_trans_left:  v }))} />
+                    <ScoreSelect label="Left" options={BUCCAL_TRANS_OPTIONS} value={detail.buccal_trans_left} onChange={v => setDetail(d => ({ ...d, buccal_trans_left: v }))} />
                   </div>
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--blue-dark)', marginBottom: 8 }}>Vertical</div>
                     <ScoreSelect label="Right" options={BUCCAL_VERT_OPTIONS} value={detail.buccal_vert_right} onChange={v => setDetail(d => ({ ...d, buccal_vert_right: v }))} />
-                    <ScoreSelect label="Left"  options={BUCCAL_VERT_OPTIONS} value={detail.buccal_vert_left}  onChange={v => setDetail(d => ({ ...d, buccal_vert_left:  v }))} />
+                    <ScoreSelect label="Left" options={BUCCAL_VERT_OPTIONS} value={detail.buccal_vert_left} onChange={v => setDetail(d => ({ ...d, buccal_vert_left: v }))} />
                   </div>
                 </div>
                 <SectionTotal
