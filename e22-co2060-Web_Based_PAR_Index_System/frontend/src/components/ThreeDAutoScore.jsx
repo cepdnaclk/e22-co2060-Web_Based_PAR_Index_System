@@ -182,40 +182,6 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
         </div>
       )}
 
-      {/* Slot selector tabs — now driven by Case3DViewer via onSlotChange */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-        {SLOTS.map(slot => (
-          <button
-            key={slot}
-            onClick={() => { setViewSlot(slot); setActive(null) }}
-            style={{
-              padding: '7px 18px', borderRadius: 7, border: 'none',
-              cursor: 'pointer', fontWeight: 600, fontSize: 13,
-              background: viewSlot === slot
-                ? (slot === 'UPPER' ? '#2563eb' : slot === 'LOWER' ? '#16a34a' : '#b45309')
-                : '#f3f4f6',
-              color:  viewSlot === slot ? '#fff' : '#374151',
-              boxShadow: viewSlot === slot ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
-              transition: 'all 0.15s',
-              position: 'relative',
-            }}
-          >
-            {slot === 'UPPER' && '🦷 Upper'}
-            {slot === 'LOWER' && '🦷 Lower'}
-            {slot === 'BUCCAL' && '📐 Buccal'}
-            {savedSlots[slot] && (
-              <span style={{
-                position: 'absolute', top: -6, right: -6,
-                width: 14, height: 14, borderRadius: '50%',
-                background: '#16a34a', color: '#fff',
-                fontSize: 9, fontWeight: 700,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>✓</span>
-            )}
-          </button>
-        ))}
-      </div>
-
       {/* Main layout: viewer + panel */}
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
         {/* 3D viewer — replaced Model3DViewer with Case3DViewer */}
