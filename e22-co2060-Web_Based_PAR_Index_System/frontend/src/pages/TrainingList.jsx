@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { trainingApi } from '../api/api'
 import { useAuth } from '../context/AuthContext'
+import Model3DViewer from '../components/Model3DViewer'
 
 const STATUS_BADGE = {
   PENDING:  'badge-amber',
@@ -14,6 +15,8 @@ export default function TrainingList() {
   const [sets, setSets]       = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter]   = useState('ALL')
+  const [viewingSet, setViewingSet] = useState(null)   // for 3D model viewer
+  const [viewerSlot, setViewerSlot] = useState('UPPER')
 
   useEffect(() => { load() }, [])
 
@@ -131,11 +134,24 @@ export default function TrainingList() {
                   </td>
                   {!isAdmin() && (
                     <td>
-                      {t.status === 'PENDING' && (
-                        <button className="btn btn-danger btn-sm" onClick={() => deleteSet(t.id)}>
-                          Delete
-                        </button>
-                      )}
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {(t.modelFiles?.length ?? 0) > 0 && (
+                          <button
+                            className="btn btn-outline btn-sm"
+                            onClick={() => {
+                              if (viewingSet?.id === t.id) { setViewingSet(null) }
+                              else { setViewingSet(t); setViewerSlot(t.modelFiles?.[0]?.slot ?? 'UPPER') }
+                            }}
+                          >
+                            {viewingSet?.id === t.id ? '▲ Hide' : '🔍 View 3D'}
+                          </button>
+                        )}
+                        {t.status === 'PENDING' && (
+                          <button className="btn btn-danger btn-sm" onClick={() => deleteSet(t.id)}>
+                            Delete
+                          </button>
+                        )}
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -144,6 +160,42 @@ export default function TrainingList() {
           </table>
         )}
       </div>
+
+      {/* ── 3D Model Viewer (undergraduate self-view) ─────────────── */}
+      {viewingSet && !isAdmin() && (
+        <div className="card" style={{ marginTop: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div className="card-title" style={{ margin: 0 }}>3D Models — {viewingSet.anonymisedLabel}</div>
+            <button onClick={() => setViewingSet(null)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-muted)' }}>✕</button>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+            {viewingSet.modelFiles.map(f => (
+              <button key={f.id} onClick={() => setViewerSlot(f.slot)}
+                className={`btn btn-sm ${viewerSlot === f.slot ? 'btn-primary' : 'btn-outline'}`}>
+                {f.slot}
+              </button>
+            ))}
+          </div>
+          <Model3DViewer
+            modelUrl={trainingApi.getModelUrl(viewingSet.id, viewerSlot)}
+            modelType={viewingSet.modelFiles.find(f => f.slot === viewerSlot)?.fileName?.split('.').pop()?.toLowerCase() ?? 'stl'}
+            label={`${viewerSlot} arch — ${viewingSet.anonymisedLabel}`}
+            height={340}
+          />
+          <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {viewingSet.modelFiles.map(f => (
+              <div key={f.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '4px 10px', background: 'var(--gray-50)',
+                border: '1px solid var(--border)', borderRadius: 6, fontSize: 12 }}>
+                <span style={{ fontWeight: 700, color: 'var(--blue-mid)' }}>{f.slot}</span>
+                <span style={{ color: 'var(--text-muted)' }}>{f.fileName}</span>
+                <span style={{ color: 'var(--text-muted)' }}>({f.fileSizeMb} MB)</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="card" style={{
         marginTop: 24, borderLeft: '4px solid var(--amber)',
