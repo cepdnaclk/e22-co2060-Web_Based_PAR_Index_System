@@ -153,7 +153,7 @@ public class TrainingSetController {
 
     // ✅ FIXED METHOD (Bug 1 + Bug 2)
     @GetMapping("/{setId}/models/{slot}")
-    @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
+    @PreAuthorize("hasAnyRole('ORTHODONTIST','UNDERGRADUATE','ADMIN')")
     public ResponseEntity<Resource> getModelFile(
             @PathVariable Long setId,
             @PathVariable String slot,
@@ -162,8 +162,12 @@ public class TrainingSetController {
         TrainingSet ts = trainingSetRepository.findById(setId)
                 .orElseThrow(() -> new IllegalArgumentException("Training set not found: " + setId));
 
-        if (user.getRole() != User.Role.ADMIN &&
-                !ts.getReviewer().getId().equals(user.getId())) {
+        // Allow: admin, assigned reviewer (orthodontist), or the original submitter (undergraduate)
+        boolean isAdmin      = user.getRole() == User.Role.ADMIN;
+        boolean isReviewer   = ts.getReviewer() != null && ts.getReviewer().getId().equals(user.getId());
+        boolean isSubmitter  = ts.getSubmittedBy() != null && ts.getSubmittedBy().getId().equals(user.getId());
+
+        if (!isAdmin && !isReviewer && !isSubmitter) {
             throw new IllegalArgumentException("Not authorized to view this model.");
         }
 
