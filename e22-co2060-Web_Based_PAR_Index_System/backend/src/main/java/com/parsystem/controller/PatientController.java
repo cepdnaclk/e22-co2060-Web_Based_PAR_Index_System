@@ -41,12 +41,24 @@ public class PatientController {
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal User user) {
 
+        if (body.get("referenceId") == null || body.get("referenceId").trim().isEmpty()) {
+            throw new IllegalArgumentException("Reference ID is required.");
+        }
+        if (body.get("name") == null || body.get("name").trim().isEmpty()) {
+            throw new IllegalArgumentException("Name is required.");
+        }
+        if (body.get("dateOfBirth") == null || body.get("dateOfBirth").trim().isEmpty()) {
+            throw new IllegalArgumentException("Date of Birth is required.");
+        }
+        if (body.get("contact") == null || body.get("contact").trim().isEmpty()) {
+            throw new IllegalArgumentException("Contact details are required.");
+        }
+
         Patient patient = Patient.builder()
-                .referenceId(body.get("referenceId"))
-                .name(body.get("name"))
-                .dateOfBirth(body.get("dateOfBirth") != null && !body.get("dateOfBirth").isBlank()
-                        ? LocalDate.parse(body.get("dateOfBirth")) : null)
-                .contact(body.get("contact"))
+                .referenceId(body.get("referenceId").trim())
+                .name(body.get("name").trim())
+                .dateOfBirth(LocalDate.parse(body.get("dateOfBirth").trim()))
+                .contact(body.get("contact").trim())
                 .build();
 
         return ResponseEntity.ok(patientService.create(patient, user));
@@ -60,11 +72,20 @@ public class PatientController {
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal User user) {
 
+        if (body.get("name") == null || body.get("name").trim().isEmpty()) {
+            throw new IllegalArgumentException("Name is required.");
+        }
+        if (body.get("dateOfBirth") == null || body.get("dateOfBirth").trim().isEmpty()) {
+            throw new IllegalArgumentException("Date of Birth is required.");
+        }
+        if (body.get("contact") == null || body.get("contact").trim().isEmpty()) {
+            throw new IllegalArgumentException("Contact details are required.");
+        }
+
         Patient updates = Patient.builder()
-                .name(body.get("name"))
-                .dateOfBirth(body.get("dateOfBirth") != null && !body.get("dateOfBirth").isBlank()
-                        ? LocalDate.parse(body.get("dateOfBirth")) : null)
-                .contact(body.get("contact"))
+                .name(body.get("name").trim())
+                .dateOfBirth(LocalDate.parse(body.get("dateOfBirth").trim()))
+                .contact(body.get("contact").trim())
                 .build();
 
         return ResponseEntity.ok(patientService.update(id, updates, user));

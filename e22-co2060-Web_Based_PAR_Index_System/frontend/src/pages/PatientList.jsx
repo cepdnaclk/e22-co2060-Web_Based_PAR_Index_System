@@ -130,13 +130,15 @@ function NewPatientForm({ onSaved, onCancel }) {
     e.preventDefault()
     if (!form.referenceId.trim()) { setError('Reference ID is required.'); return }
     if (!form.name.trim())        { setError('Name is required.'); return }
+    if (!form.dateOfBirth)        { setError('Date of Birth is required.'); return }
+    if (!form.contact.trim())     { setError('Contact details are required.'); return }
     setSaving(true); setError('')
     try {
       const { data } = await patientApi.create({
         referenceId:  form.referenceId.trim(),
         name:         form.name.trim(),
-        dateOfBirth:  form.dateOfBirth || null,
-        contact:      form.contact.trim() || null,
+        dateOfBirth:  form.dateOfBirth,
+        contact:      form.contact.trim(),
       })
       onSaved(data)
     } catch (err) {
@@ -162,12 +164,12 @@ function NewPatientForm({ onSaved, onCancel }) {
         </div>
         <div className="row">
           <div className="col form-group">
-            <label>Date of Birth</label>
-            <input name="dateOfBirth" type="date" value={form.dateOfBirth} onChange={handle} />
+            <label>Date of Birth *</label>
+            <input name="dateOfBirth" type="date" value={form.dateOfBirth} onChange={handle} required />
           </div>
           <div className="col form-group">
-            <label>Contact</label>
-            <input name="contact" value={form.contact} onChange={handle} placeholder="Phone or email" />
+            <label>Contact *</label>
+            <input name="contact" value={form.contact} onChange={handle} required placeholder="Phone or email" />
           </div>
         </div>
         <div className="flex gap-8">

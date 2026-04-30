@@ -29,10 +29,10 @@ public class Patient {
     @Column(nullable = false, length = 120)
     private String name;
 
-    @Column(name = "date_of_birth")
+    @Column(name = "date_of_birth", nullable = false)
     private LocalDate dateOfBirth;
 
-    @Column(length = 100)
+    @Column(nullable = false, length = 100)
     private String contact;
 
     @Column(name = "is_archived", nullable = false)
