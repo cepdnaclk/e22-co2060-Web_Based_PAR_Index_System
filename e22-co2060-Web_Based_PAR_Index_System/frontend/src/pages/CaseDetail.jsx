@@ -285,7 +285,7 @@ export default function CaseDetail() {
 
   // ── Post-treatment guard ─────────────────────────────────────────
   const preCase      = allCases.find(c => c.stage === 'PRE')
-  const preFinalised = preCase?.isFinalized === true
+  const preFinalised = preCase?.finalized === true || preCase?.isFinalized === true
 
   if (loading)    return <div className="centered"><div className="spinner spinner-lg" /></div>
   if (pageError)  return <div className="page"><div className="alert alert-error">{pageError}</div></div>
@@ -294,7 +294,7 @@ export default function CaseDetail() {
   const c          = orthoCase
   const modelsOk   = (c.modelFiles?.length ?? 0) >= 3
   const hasPAR     = !!c.parScore
-  const finalized  = c.isFinalized
+  const finalized  = c.finalized === true || c.isFinalized === true
   const isPost     = c.stage === 'POST'
   const drName     = `Dr. ${user?.name}`
 
@@ -624,23 +624,24 @@ export default function CaseDetail() {
         </div>
       )}
 
-      {/* ── 3D Upload (only if not finalised) ───────────────────── */}
-      {!finalized && (
+      {/* ── 3D Upload (only if not finalised AND no models uploaded yet) ── */}
+      {!finalized && !modelsOk && (
         <div className="card" style={{ marginBottom: 24 }}>
-          <div className="card-title">
-            {modelsOk ? 'Replace 3D Dental Models' : 'Upload 3D Dental Models'}
+          <div className="card-title">Upload 3D Dental Models</div>
+          <div className="alert alert-info" style={{ marginBottom: 16 }}>
+            Upload three 3D dental scan files — one each for upper arch, lower arch, and buccal view (STL or OBJ, max 50 MB each).
           </div>
-          {!modelsOk && (
-            <div className="alert alert-info" style={{ marginBottom: 16 }}>
-              Upload three 3D dental scan files — one each for upper arch, lower arch, and buccal view (STL or OBJ, max 50 MB each).
-            </div>
-          )}
           <ModelUploadSlots files={files} onChange={handleFileChange} errors={fileErrors} />
           {uploadSuccess && <div className="alert alert-success" style={{ marginTop: 12 }}>✅ 3D models uploaded successfully.</div>}
           {uploadError   && <div className="alert alert-error"   style={{ marginTop: 12 }}>❌ {uploadError}</div>}
           <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={uploadModels} disabled={uploading}>
             {uploading ? <><span className="spinner" /> Uploading…</> : '⬆ Upload 3D Models'}
           </button>
+        </div>
+      )}
+      {!finalized && modelsOk && (
+        <div className="alert alert-success" style={{ marginBottom: 24 }}>
+          ✅ 3D models have been uploaded for this case. Re-uploading is disabled once files are set.
         </div>
       )}
 

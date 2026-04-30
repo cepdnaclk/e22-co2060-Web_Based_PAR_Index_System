@@ -31,6 +31,11 @@ spring:
 
 server:
   port: 8081
+
+  tomcat:
+    max-swallow-size: -1
+    connection-timeout: 60000
+
   error:
     include-message: always
     include-binding-errors: always
