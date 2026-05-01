@@ -13,8 +13,6 @@ import TrainingSubmit  from './pages/TrainingSubmit'
 import TrainingList    from './pages/TrainingList'
 import TrainingReview  from './pages/TrainingReview'
 import AdminPanel      from './pages/AdminPanel'
-import ForgotPassword  from './pages/ForgotPassword'
-import ResetPassword   from './pages/ResetPassword'
 
 function RequireAuth({ children, roles }) {
   const { user, loading } = useAuth()
@@ -30,10 +28,8 @@ export default function App() {
   return (
     <Routes>
       {/* Public */}
-      <Route path="/login"           element={user ? <Navigate to="/dashboard" /> : <Login />} />
-      <Route path="/register"        element={user ? <Navigate to="/dashboard" /> : <Register />} />
-      <Route path="/forgot-password" element={user ? <Navigate to="/dashboard" /> : <ForgotPassword />} />
-      <Route path="/reset-password"  element={user ? <Navigate to="/dashboard" /> : <ResetPassword />} />
+      <Route path="/login"    element={user ? <Navigate to="/dashboard" /> : <Login />} />
+      <Route path="/register" element={user ? <Navigate to="/dashboard" /> : <Register />} />
 
       {/* Protected — all roles */}
       <Route element={<RequireAuth><Layout /></RequireAuth>}>
