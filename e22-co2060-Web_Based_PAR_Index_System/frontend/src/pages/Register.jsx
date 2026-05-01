@@ -18,6 +18,20 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
+  const getPasswordStrength = (password) => {
+    let score = 0;
+    if (!password) return 0;
+    if (password.length >= 8) score += 1;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
+    if (/\d/.test(password)) score += 1;
+    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+    return score;
+  };
+
+  const strengthScore = getPasswordStrength(form.password);
+  const strengthLabels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+  const strengthColors = ['#ff4d4f', '#ff4d4f', '#faad14', '#52c41a', '#52c41a'];
+
   const handle = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
   const submit = async e => {
@@ -99,7 +113,31 @@ export default function Register() {
                 )}
               </button>
             </div>
-            <span className="form-hint">Minimum 8 characters</span>
+            {form.password ? (
+              <div style={{ marginTop: '8px' }}>
+                <div style={{ display: 'flex', gap: '4px', height: '4px', marginBottom: '4px' }}>
+                  {[1, 2, 3, 4].map((level) => (
+                    <div 
+                      key={level} 
+                      style={{ 
+                        flex: 1, 
+                        borderRadius: '2px', 
+                        backgroundColor: strengthScore >= level ? strengthColors[strengthScore] : 'var(--border)',
+                        transition: 'background-color 0.3s'
+                      }} 
+                    />
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span className="form-hint" style={{ margin: 0 }}>Minimum 8 characters</span>
+                  <span style={{ color: strengthColors[strengthScore], fontWeight: 500 }}>
+                    {strengthLabels[strengthScore]}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <span className="form-hint" style={{ marginTop: '4px', display: 'block' }}>Minimum 8 characters</span>
+            )}
           </div>
 
           <div className="form-group">
