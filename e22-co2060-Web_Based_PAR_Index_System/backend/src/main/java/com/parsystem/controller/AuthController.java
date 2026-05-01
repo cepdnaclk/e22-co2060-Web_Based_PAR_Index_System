@@ -25,4 +25,16 @@ public class AuthController {
             @Valid @RequestBody AuthDto.LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody AuthDto.ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok().body(java.util.Map.of("message", "If an account exists with that email, a password reset link has been simulated."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody AuthDto.ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok().body(java.util.Map.of("message", "Password has been successfully reset."));
+    }
 }

@@ -45,7 +45,10 @@ export default function Login() {
             <input name="email" type="email" value={form.email} onChange={handle} required autoFocus />
           </div>
           <div className="form-group">
-            <label>Password</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ marginBottom: 0 }}>Password</label>
+              <Link to="/forgot-password" style={{ fontSize: 13, color: 'var(--blue-mid)', fontWeight: 500 }}>Forgot password?</Link>
+            </div>
             <div style={{ position: 'relative' }}>
               <input 
                 name="password" 

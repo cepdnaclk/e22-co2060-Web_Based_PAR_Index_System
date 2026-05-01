@@ -28,6 +28,17 @@ public class AuthDto {
         @NotBlank        private String password;
     }
 
+    @Data
+    public static class ForgotPasswordRequest {
+        @Email @NotBlank private String email;
+    }
+
+    @Data
+    public static class ResetPasswordRequest {
+        @NotBlank private String token;
+        @NotBlank @Size(min = 8) private String newPassword;
+    }
+
     @Data @Builder
     public static class AuthResponse {
         private String token;
