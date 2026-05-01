@@ -52,6 +52,12 @@ public class CaseController {
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new IllegalArgumentException("Patient not found: " + patientId));
 
+        boolean hasUnfinalised = caseRepository.findByPatientId(patientId).stream()
+                .anyMatch(c -> !c.isFinalized());
+        if (hasUnfinalised) {
+            throw new IllegalStateException("An unfinalised case already exists. Please finalise it before creating a new case.");
+        }
+
         if (stage == OrthoCase.Stage.POST) {
             boolean preFinalised = caseRepository.findByPatientId(patientId).stream()
                     .anyMatch(c -> c.getStage() == OrthoCase.Stage.PRE && c.isFinalized());

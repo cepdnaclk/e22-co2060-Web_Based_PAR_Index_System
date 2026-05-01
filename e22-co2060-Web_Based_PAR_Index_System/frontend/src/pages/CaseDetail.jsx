@@ -463,13 +463,7 @@ export default function CaseDetail() {
             {comparisonLoading && <span className="spinner" style={{ marginLeft: 6 }} />}
           </div>
 
-          {!comparisonLoading && !hasComparisonData && (
-            <div className="alert alert-info" style={{ fontSize: 13 }}>
-              Landmark displacement comparison will appear here once both the pre-treatment
-              and post-treatment 3D landmarks have been placed and saved via the
-              <strong> 3D Auto-Detect</strong> tab.
-            </div>
-          )}
+
 
           {!comparisonLoading && hasComparisonData && (
             <>

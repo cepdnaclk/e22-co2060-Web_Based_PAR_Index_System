@@ -100,6 +100,15 @@ public class PatientController {
         return ResponseEntity.noContent().build();
     }
 
+    /** Only ORTHODONTIST can delete patients. */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ORTHODONTIST')")
+    public ResponseEntity<Void> delete(@PathVariable Long id,
+                                        @AuthenticationPrincipal User user) {
+        patientService.delete(id, user);
+        return ResponseEntity.noContent().build();
+    }
+
     /** ORTHODONTIST and ADMIN can search. */
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")

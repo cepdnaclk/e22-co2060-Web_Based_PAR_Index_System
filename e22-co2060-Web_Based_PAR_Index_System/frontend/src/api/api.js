@@ -39,6 +39,7 @@ export const patientApi = {
   create:  data         => api.post('/patients', data),
   update:  (id, data)   => api.put(`/patients/${id}`, data),
   archive: id           => api.patch(`/patients/${id}/archive`),
+  delete:  id           => api.delete(`/patients/${id}`),
   search:  query        => api.get('/patients/search', { params: { query } }),
 }
 

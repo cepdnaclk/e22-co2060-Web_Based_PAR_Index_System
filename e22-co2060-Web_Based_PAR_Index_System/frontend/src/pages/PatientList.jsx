@@ -27,12 +27,24 @@ export default function PatientList() {
     (p.referenceId ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
+  const handleDelete = async (e, id) => {
+    e.stopPropagation()
+    if (window.confirm("Are you sure you want to delete this patient? This will delete all details from the database.")) {
+      try {
+        await patientApi.delete(id)
+        setPatients(prev => prev.filter(p => p.id !== id))
+      } catch (err) {
+        alert("Failed to delete patient.")
+      }
+    }
+  }
+
   return (
     <div className="page">
       <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
         <div>
           <h1>Patients</h1>
-          <p style={{ marginTop: 3 }}>{patients.length} active record{patients.length !== 1 ? 's' : ''}</p>
+          <p style={{ marginTop: 3 }}>{patients.length} record{patients.length !== 1 ? 's' : ''}</p>
         </div>
         {/* Only orthodontist sees + New Patient button */}
         {isOrthodontist() && (
@@ -80,8 +92,7 @@ export default function PatientList() {
                 <th>Name</th>
                 <th>Date of Birth</th>
                 <th>Contact</th>
-                <th>Status</th>
-                {/* Only orthodontist gets View button column */}
+                {/* Only orthodontist gets View/Delete button column */}
                 {isOrthodontist() && <th></th>}
               </tr>
             </thead>
@@ -94,13 +105,14 @@ export default function PatientList() {
                   <td style={{ fontWeight: 500 }}>{p.name}</td>
                   <td>{p.dateOfBirth ?? '—'}</td>
                   <td>{p.contact ?? '—'}</td>
-                  <td>
-                    <span className={`badge ${p.isArchived ? 'badge-gray' : 'badge-green'}`}>
-                      {p.isArchived ? 'Archived' : 'Active'}
-                    </span>
-                  </td>
                   {isOrthodontist() && (
-                    <td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        className="btn btn-outline btn-sm"
+                        style={{ color: 'var(--coral)', borderColor: 'var(--coral)', marginRight: '8px' }}
+                        onClick={e => handleDelete(e, p.id)}>
+                        Delete
+                      </button>
                       <Link
                         to={`/patients/${p.id}`}
                         className="btn btn-outline btn-sm"

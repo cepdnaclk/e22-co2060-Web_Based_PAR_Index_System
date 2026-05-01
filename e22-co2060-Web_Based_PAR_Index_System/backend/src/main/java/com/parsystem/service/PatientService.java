@@ -66,6 +66,13 @@ public class PatientService {
         auditService.log(performer, "ARCHIVE_PATIENT", "Patient", id, null);
     }
 
+    @Transactional
+    public void delete(Long id, User performer) {
+        Patient p = getById(id);
+        patientRepository.delete(p);
+        auditService.log(performer, "DELETE_PATIENT", "Patient", id, null);
+    }
+
     public List<Patient> search(String query) {
         return patientRepository.findByNameContainingIgnoreCaseAndIsArchivedFalse(query);
     }
