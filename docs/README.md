@@ -3,8 +3,8 @@ layout: home
 permalink: index.html
 
 # Please update this with your repository name and project title
-repository-name: eYY-co2060-project-template
-title: Project Template
+repository-name: e22-co2060-Web_Based_PAR_Index_System
+title: Automated PAR Index Calculation System
 ---
 
 [comment]: # "This is the standard layout for the project, but you can clean this and use your own template, and add more information required for your own project"
@@ -19,14 +19,19 @@ If your followed all the given instructions correctly, your repository will be a
 
 A HTML template integrated with the given GitHub repository templates, based on github.com/cepdnaclk/eYY-project-theme . If you like to remove this default theme and make your own web page, you can remove the file, docs/_config.yml and create the site using HTML. -->
 
-# Project Title
+# Automated PAR Index Calculation System
 
 ---
 
 ## Team
--  eNumber, Name, [email](mailto:name@email.com)
--  eNumber, Name, [email](mailto:name@email.com)
--  eNumber, Name, [email](mailto:name@email.com)
+-  E/22/014, M.K.H. Ahamed, [email](mailto:e22014@eng.pdn.ac.lk)
+-  E/22/034, M.A.M. Assadh, [email](mailto:e22034@eng.pdn.ac.lk)
+-  E/22/035, M.F.M. Ayyash, [email](mailto:e22035@eng.pdn.ac.lk)
+-  E/22/036, M.N. Aamir, [email](mailto:e22036@eng.pdn.ac.lk)
+
+## Supervisors
+-  Dr. Asitha Bandaranayake, [email](mailto:asithab@eng.pdn.ac.lk)
+-  T.M.I.I.C. Thennakoon, [email](mailto:e21407@eng.pdn.ac.lk)
 
 <!-- Image (photo/drawing of the final hardware) should be here -->
 
@@ -36,37 +41,25 @@ A HTML template integrated with the given GitHub repository templates, based on 
 
 #### Table of Contents
 1. [Introduction](#introduction)
-2. [Solution Architecture](#solution-architecture )
-3. [Software Designs](#hardware-and-software-designs)
-4. [Testing](#testing)
-5. [Conclusion](#conclusion)
-6. [Links](#links)
+2. [Conclusion](#conclusion)
+3. [Links](#links)
 
 ## Introduction
 
-Description of the real world problem and solution, impact
+The Peer Assessment Rating (PAR) Index is a clinical metric used in orthodontics to quantify the severity of malocclusion — the misalignment of teeth and jaws. Traditionally, computing the PAR Index is a manual, time-consuming process requiring trained clinicians to measure dental models by hand, making it prone to variability and difficult to scale.
 
-
-## Solution Architecture
-
-High level diagram + description
-
-## Software Designs
-
-Detailed designs with many sub-sections
-
-## Testing
-
-Testing done on software : detailed + summarized results
+This project develops a web-based software system that automates PAR Index computation by integrating machine-learning-based orthodontic landmark detection on 3D dental models. The system is designed with a focus on scalability, reliability, and clinical usability, aiming to assist orthodontists with faster and more consistent treatment assessments.
 
 ## Conclusion
 
-What was achieved, future developments, commercialization plans
+This project aims to solve a genuine clinical bottleneck in orthodontic diagnostics. By automating the PAR Index calculation, the system significantly improves diagnostic objectivity and consistency while saving clinicians substantial time during audits.
+
+Beyond immediate clinical use, the system enables large-scale outcome analysis which was previously unfeasible due to manual constraints. The project has already attracted international interest from orthodontic groups in Japan and South Korea, demonstrating its potential to evolve from an academic prototype into a globally usable clinical software product.
 
 ## Links
 
-- [Project Repository](https://github.com/cepdnaclk/{{ page.repository-name }}){:target="_blank"}
-- [Project Page](https://cepdnaclk.github.io/{{ page.repository-name}}){:target="_blank"}
+- [Project Repository](https://github.com/cepdnaclk/{{ page.repository-name }}){:target="https://github.com/cepdnaclk/e22-co2060-Web_Based_PAR_Index_System/tree/main"}
+- [Project Page](https://cepdnaclk.github.io/{{ page.repository-name}}){:target="https://cepdnaclk.github.io/e22-co2060-Web_Based_PAR_Index_System/"}
 - [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
 - [University of Peradeniya](https://eng.pdn.ac.lk/)
 
