@@ -1,0 +1,34 @@
+{
+    "title": "Web_Based_PAR_Index_System",
+    "team": [
+    {
+        "name": "M.K.H. Ahamed",
+        "email": "e22014eng.pdn.ac.lk",
+        "eNumber": "E/22/014"
+    },
+    {
+        "name": "M.A.M. Assadh",
+        "email": "e22034eng.pdn.ac.lk",
+        "eNumber": "E/22/034"
+    },
+    {
+        "name": "M.F.M. Ayyash",
+        "email": "e22035eng.pdn.ac.lk",
+        "eNumber": "E/22/035"
+    },
+    {
+        "name": "M.N.Aamir",
+        "email": "e22036eng.pdn.ac.lk",
+        "eNumber": "E/22/036"
+    }
+    ],
+    "supervisors": [
+    {
+        "name": "Dr. Asitha Bandaranayake",
+        "email": "asithab@eng.pdn.ac.lk"
+    }
+    ],
+    "tags": ["Web",  "Software Systems", "CO2060"],
+    "image":"cover_page.jpg",
+    "thumbnail":"thumbnail.jpg"
+}
