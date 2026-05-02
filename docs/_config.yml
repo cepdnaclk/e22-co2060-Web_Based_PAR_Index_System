@@ -10,8 +10,4 @@ kramdown:
   parse_block_html: true
   syntax_highlighter_opts:
     block:
-<<<<<<< HEAD
       line_numbers: false
-=======
-      line_numbers: false
->>>>>>> be759b83a99e90126a6ddf726964d7cbaf5824cd
