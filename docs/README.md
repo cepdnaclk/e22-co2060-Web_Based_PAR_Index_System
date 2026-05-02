@@ -31,7 +31,7 @@ A HTML template integrated with the given GitHub repository templates, based on 
 
 ## Supervisors
 -  Dr. Asitha Bandaranayake, [email](mailto:asithab@eng.pdn.ac.lk)
--  T.M.I.I.C. Thennakoon, [email](mailto:e21407@eng.pdn.ac.lk)
+-  S. Ganathipan, [email](mailto:e21148@eng.pdn.ac.lk)
 
 <!-- Image (photo/drawing of the final hardware) should be here -->
 
@@ -58,8 +58,8 @@ Beyond immediate clinical use, the system enables large-scale outcome analysis w
 
 ## Links
 
-- [Project Repository](https://github.com/cepdnaclk/e22-co2060-Web_Based_PAR_Index_System){:target="_blank"}
-- [Project Page](https://cepdnaclk.github.io/e22-co2060-Web_Based_PAR_Index_System){:target="_blank"}
+- [Project Repository](https://github.com/cepdnaclk/e22-co2060-Web_Based_PAR_Index_System)
+- [Project Page](https://cepdnaclk.github.io/e22-co2060-Web_Based_PAR_Index_System)
 - [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
 - [University of Peradeniya](https://eng.pdn.ac.lk/)
 
