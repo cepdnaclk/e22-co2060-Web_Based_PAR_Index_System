@@ -31,7 +31,7 @@ A HTML template integrated with the given GitHub repository templates, based on 
 
 ## Supervisors
 -  Dr. Asitha Bandaranayake, [email](mailto:asithab@eng.pdn.ac.lk)
--  S. Ganathipan, [email](mailto:e21148@eng.pdn.ac.lk)
+-  T.M.I.I.C. Thennakoon, [email](mailto:e21407@eng.pdn.ac.lk)
 
 <!-- Image (photo/drawing of the final hardware) should be here -->
 
