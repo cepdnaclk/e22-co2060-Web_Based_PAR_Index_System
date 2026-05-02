@@ -1,29 +1,24 @@
 {
-    "title": "Web_Based_PAR_Index_System",
     "team": [
         {
-            "name": "M.K.H. Ahamed",
+            "name": "M.K.H.Ahamed",
             "email": "e22014@eng.pdn.ac.lk",
-            "eNumber": "E/22/014",
-            "image": "E22014.jpg"
+            "eNumber": "E/22/014"
         },
         {
             "name": "M.A.M. Assadh",
             "email": "e22034@eng.pdn.ac.lk",
-            "eNumber": "E/22/034",
-            "image": "E22034.jpg"
+            "eNumber": "E/22/034"
         },
         {
             "name": "M.F.M. Ayyash",
             "email": "e22035@eng.pdn.ac.lk",
-            "eNumber": "E/22/035",
-            "image": "E22035.jpg"
+            "eNumber": "E/22/035"
         },
         {
             "name": "M.N.Aamir",
             "email": "e22036@eng.pdn.ac.lk",
-            "eNumber": "E/22/036",
-            "image": "E22036.jpg"
+            "eNumber": "E/22/036"
         }
     ],
     "supervisors": [
@@ -33,16 +28,6 @@
         }
     ],
     "tags": ["Web", "Software Systems", "CO2060"],
-    "links": [
-        {
-            "label": "Project Repository",
-            "url": "https://github.com/cepdnaclk/e22-co2060-Web_Based_PAR_Index_System"
-        },
-        {
-            "label": "Project Page",
-            "url": "https://cepdnaclk.github.io/e22-co2060-Web_Based_PAR_Index_System"
-        }
-    ],
-    "image": "cover_page.jpg",
-    "thumbnail": "cover_page.jpg"
+    "image":"cover_page.jpg",
+    "thumbnail":"thumbnail.jpg"
 }
