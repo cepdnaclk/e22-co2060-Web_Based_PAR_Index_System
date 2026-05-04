@@ -1,24 +1,22 @@
 {
-    "title": "Automated PAR Index Calculation System",
-    "description": "The Peer Assessment Rating (PAR) Index quantifies malocclusion severity in orthodontics. This project develops a web-based software system that integrates machine-learning-based orthodontic landmark detection on 3D dental models to automate PAR Index computation, focusing on scalability, reliability, and clinical usability.",
     "team": [
         {
-            "name": "M.K.H. Ahamed",
+            "name": "M. K. H. Ahamed",
             "email": "e22014@eng.pdn.ac.lk",
             "eNumber": "E/22/014"
         },
         {
-            "name": "M.A.M. Assadh",
+            "name": "M. A. M. Assadh",
             "email": "e22034@eng.pdn.ac.lk",
             "eNumber": "E/22/034"
         },
         {
-            "name": "M.F.M. Ayyash",
+            "name": "M. F. M. Ayyash",
             "email": "e22035@eng.pdn.ac.lk",
             "eNumber": "E/22/035"
         },
         {
-            "name": "M.N. Aamir",
+            "name": "M. N. Aamir",
             "email": "e22036@eng.pdn.ac.lk",
             "eNumber": "E/22/036"
         }
