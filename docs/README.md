@@ -9,33 +9,29 @@ title: Automated PAR Index Calculation System
 
 <br>
 
-# Team
+## Team
+- E/22/014, M.K.H. Ahamed, [e22014@eng.pdn.ac.lk](mailto:e22014@eng.pdn.ac.lk)
+- E/22/034, M.A.M. Assadh, [e22034@eng.pdn.ac.lk](mailto:e22034@eng.pdn.ac.lk)
+- E/22/035, M.F.M. Ayyash, [e22035@eng.pdn.ac.lk](mailto:e22035@eng.pdn.ac.lk)
+- E/22/036, M.N. Aamir, [e22036@eng.pdn.ac.lk](mailto:e22036@eng.pdn.ac.lk)
 
-| eNumber  | Name               | Email |
-|----------|--------------------|-------|
-| E/22/014 | M.K.H. Ahamed      | e22014@eng.pdn.ac.lk |
-| E/22/034 | M.A.M. Assadh      | e22034@eng.pdn.ac.lk |
-| E/22/035 | M.F.M. Ayyash      | e22035@eng.pdn.ac.lk |
-| E/22/036 | M.N. Aamir         | e22036@eng.pdn.ac.lk |
-
----
-
-# Supervisors
-
-- Dr. Asitha Bandaranayake – asithab@eng.pdn.ac.lk  
-- T.M.I.I.C. Thennakoon – e21407@eng.pdn.ac.lk  
+## Supervisors
+- Dr. Asitha Bandaranayake, [asithab@eng.pdn.ac.lk](mailto:asithab@eng.pdn.ac.lk)
+- T.M.I.I.C. Thennakoon, [e21407@eng.pdn.ac.lk](mailto:e21407@eng.pdn.ac.lk)
 
 ---
 
 #### Table of Contents
-1. Introduction
-2. System Overview
-3. Software Design
-4. System Usage & Setup
-5. PAR Model Details
-6. Links
+1. [Introduction](#introduction)
+2. [Solution Architecture](#solution-architecture)
+3. [Software Designs](#software-designs)
+4. [System Usage & Setup](#system-usage--setup)
+5. [PAR Model Details](#par-model-details)
+6. [Conclusion](#conclusion)
+7. [Links](#links)
 
 ---
+
 
 # 1. Introduction
 
