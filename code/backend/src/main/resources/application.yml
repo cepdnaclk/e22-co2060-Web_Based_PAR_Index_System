@@ -55,7 +55,7 @@ app:
     # Disabled by default so a missing/unstarted ML service never blocks
     # the core clinical workflow — only /predict-landmarks needs it.
     service-url: ${ML_SERVICE_URL:http://localhost:5001}
-    enabled: ${ML_SERVICE_ENABLED:false}
+    enabled: ${ML_SERVICE_ENABLED:true}
 
 springdoc:
   api-docs:

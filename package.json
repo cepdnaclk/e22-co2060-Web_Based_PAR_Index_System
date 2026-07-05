@@ -1,0 +1,15 @@
+{
+  "name": "par-index-system-dev",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Dev orchestrator — runs backend, frontend, and ml-service together from one command. Not part of the deployed application.",
+  "scripts": {
+    "dev": "concurrently -n BACKEND,FRONTEND,ML -c blue,green,magenta \"npm:dev:backend\" \"npm:dev:frontend\" \"npm:dev:ml\"",
+    "dev:backend": "cd code/backend && mvn spring-boot:run",
+    "dev:frontend": "cd code/frontend && npm run dev",
+    "dev:ml": "cd code/ml-service && venv\\Scripts\\python.exe app.py"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
