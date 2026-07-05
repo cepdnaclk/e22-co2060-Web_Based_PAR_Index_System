@@ -25,12 +25,19 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
   const [activeLandmark, setActive]     = useState(null)
   // Placed points: { UPPER: {R3M:{x,y,z}, ...}, LOWER: {...}, BUCCAL: {...} }
   const [placedPoints, setPlacedPoints] = useState({ UPPER: {}, LOWER: {}, BUCCAL: {} })
+  // Per-point metadata: { UPPER: { R3M: { source, confirmed } }, ... }
+  const [pointMeta, setPointMeta]       = useState({ UPPER: {}, LOWER: {}, BUCCAL: {} })
   // Saved-to-backend slots
   const [savedSlots, setSavedSlots]     = useState({ UPPER: false, LOWER: false, BUCCAL: false })
 
   // UI state
   const [submitting,  setSubmitting]  = useState(false)
   const [calculating, setCalculating] = useState(false)
+  const [predicting,  setPredicting]  = useState(false)
+  const [confirming,  setConfirming]  = useState(false)
+  const [predictMsg,  setPredictMsg]  = useState('')
+  const [mlParEstimate, setMlParEstimate] = useState(null)
+  const [mlParModelVersion, setMlParModelVersion] = useState(null)
   const [error,       setError]       = useState('')
   const [autoResult,  setAutoResult]  = useState(null)
 
@@ -42,28 +49,64 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
     )
   }, [placedPoints])
 
+  // Reloads landmarks (and their source/confirmed metadata) from the backend
+  const reloadLandmarks = useCallback(() => {
+    if (!caseId) return
+    return landmarkApi.get(caseId).then(({ data }) => {
+      const restored = { UPPER: {}, LOWER: {}, BUCCAL: {} }
+      const meta      = { UPPER: {}, LOWER: {}, BUCCAL: {} }
+      ;(data ?? []).forEach(lm => {
+        if (restored[lm.slot]) {
+          restored[lm.slot][lm.pointName] = { x: lm.x, y: lm.y, z: lm.z }
+          meta[lm.slot][lm.pointName] = { source: lm.source, confirmed: lm.confirmed }
+        }
+      })
+      setPlacedPoints(restored)
+      setPointMeta(meta)
+      setSavedSlots({
+        UPPER:  Object.keys(restored.UPPER).length  > 0,
+        LOWER:  Object.keys(restored.LOWER).length  > 0,
+        BUCCAL: Object.keys(restored.BUCCAL).length > 0,
+      })
+    })
+  }, [caseId])
+
   // Load any previously saved landmarks when the panel first opens
   useEffect(() => {
-    if (!caseId) return
-    landmarkApi.get(caseId)
-      .then(({ data }) => {
-        if (!data?.length) return
-        const restored = { UPPER: {}, LOWER: {}, BUCCAL: {} }
-        data.forEach(lm => {
-          if (restored[lm.slot]) {
-            restored[lm.slot][lm.pointName] = { x: lm.x, y: lm.y, z: lm.z }
-          }
-        })
-        setPlacedPoints(restored)
-        // Mark as saved for slots that had data
-        setSavedSlots({
-          UPPER:  Object.keys(restored.UPPER).length  > 0,
-          LOWER:  Object.keys(restored.LOWER).length  > 0,
-          BUCCAL: Object.keys(restored.BUCCAL).length > 0,
-        })
-      })
-      .catch(() => { /* no landmarks yet — that's fine */ })
-  }, [caseId])
+    reloadLandmarks().catch(() => { /* no landmarks yet — that's fine */ })
+  }, [reloadLandmarks])
+
+  // ── ML prediction ─────────────────────────────────────────────────────
+  const handlePredict = async () => {
+    setPredicting(true)
+    setError('')
+    setPredictMsg('')
+    try {
+      const { data } = await landmarkApi.predict(caseId)
+      setPredictMsg(data.message ?? `Predicted ${data.landmarksPredicted} point(s).`)
+      setMlParEstimate(data.mlParEstimate ?? null)
+      setMlParModelVersion(data.mlParModelVersion ?? null)
+      await reloadLandmarks()
+    } catch (err) {
+      setError(err.response?.data?.message ?? 'ML prediction failed.')
+    } finally {
+      setPredicting(false)
+    }
+  }
+
+  // ── Confirm ML suggestions for the current slot ────────────────────────
+  const handleConfirmMl = async () => {
+    setConfirming(true)
+    setError('')
+    try {
+      await landmarkApi.confirmSlot(caseId, viewSlot)
+      await reloadLandmarks()
+    } catch (err) {
+      setError(err.response?.data?.message ?? 'Could not confirm ML points.')
+    } finally {
+      setConfirming(false)
+    }
+  }
 
   // ── Point placement ─────────────────────────────────────────────────
   const handlePointPlaced = useCallback((name, coords) => {
@@ -161,7 +204,39 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
         <span style={{ marginLeft: 'auto', fontSize: 12, color: '#6b7280' }}>
           {totalPlaced} points placed · {savedCount}/3 slots saved
         </span>
+        <button
+          onClick={handlePredict}
+          disabled={predicting}
+          style={{
+            padding: '5px 14px', borderRadius: 20, border: '1px solid #c4b5fd',
+            background: predicting ? '#f3f4f6' : '#faf5ff', color: '#6d28d9',
+            fontWeight: 600, fontSize: 12, cursor: predicting ? 'not-allowed' : 'pointer',
+          }}
+          title="Ask the ML service to suggest landmarks from the uploaded 3D models"
+        >
+          {predicting ? '⏳ Predicting…' : '🤖 Predict Landmarks (ML)'}
+        </button>
       </div>
+
+      {predictMsg && (
+        <div style={{
+          padding: '10px 14px', background: '#faf5ff', border: '1px solid #e9d5ff',
+          borderRadius: 8, color: '#6d28d9', fontSize: 13, marginBottom: 14,
+        }}>
+          🤖 {predictMsg}
+        </div>
+      )}
+
+      {mlParEstimate != null && (
+        <div style={{
+          padding: '10px 14px', background: '#ecfeff', border: '1px solid #a5f3fc',
+          borderRadius: 8, color: '#155e75', fontSize: 13, marginBottom: 14,
+        }}>
+          📊 <strong>ML PAR cross-check estimate: {mlParEstimate}</strong> (model {mlParModelVersion}).
+          This is a secondary signal from a trained regressor, shown alongside the geometric
+          calculation below — it does not replace or override it.
+        </div>
+      )}
 
       {error && (
         <div style={{
@@ -253,11 +328,14 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
         <LandmarkPanel
           slot={viewSlot}
           placedPoints={placedPoints[viewSlot]}
+          pointMeta={pointMeta[viewSlot]}
           activeLandmark={activeLandmark}
           onSelectLandmark={setActive}
           onClear={handleClearSlot}
           onSubmitSlot={handleSubmitSlot}
           onAutoCalc={handleAutoCalc}
+          onConfirmMl={handleConfirmMl}
+          confirming={confirming}
           submitting={submitting}
           calculating={calculating}
           totalPlaced={savedCount}

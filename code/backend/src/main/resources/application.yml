@@ -50,6 +50,13 @@ app:
     clinical-dir: clinical
     training-dir: training
 
+  ml:
+    # Base URL of the landmark-prediction microservice (see /ml-service).
+    # Disabled by default so a missing/unstarted ML service never blocks
+    # the core clinical workflow — only /predict-landmarks needs it.
+    service-url: ${ML_SERVICE_URL:http://localhost:5001}
+    enabled: ${ML_SERVICE_ENABLED:false}
+
 springdoc:
   api-docs:
     path: /api-docs

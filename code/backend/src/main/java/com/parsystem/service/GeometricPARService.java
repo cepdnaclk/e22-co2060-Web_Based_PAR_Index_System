@@ -62,13 +62,23 @@ public class GeometricPARService {
         List<LandmarkPoint> all = landmarkRepo
                 .findByOrthoCaseIdOrderBySlotAscPointNameAsc(caseId);
 
-        long count = all.size();
-        log.debug("Auto-calculating PAR for case {} using {} landmark points", caseId, count);
+        // Only CONFIRMED landmarks feed the score. Unconfirmed ML_PREDICTED
+        // points (from MlPredictionService) must be reviewed by a clinician
+        // — via the normal /landmarks submit, or an explicit confirm step —
+        // before they can affect a real PAR score.
+        List<LandmarkPoint> confirmed = all.stream()
+                .filter(LandmarkPoint::isConfirmed)
+                .collect(Collectors.toList());
+        long unconfirmedCount = all.size() - confirmed.size();
+
+        long count = confirmed.size();
+        log.debug("Auto-calculating PAR for case {} using {} confirmed landmark points ({} unconfirmed skipped)",
+                caseId, count, unconfirmedCount);
 
         // Build lookup maps per slot
-        Map<String, Point3d> upper  = toMap(all, LandmarkPoint.Slot.UPPER);
-        Map<String, Point3d> lower  = toMap(all, LandmarkPoint.Slot.LOWER);
-        Map<String, Point3d> buccal = toMap(all, LandmarkPoint.Slot.BUCCAL);
+        Map<String, Point3d> upper  = toMap(confirmed, LandmarkPoint.Slot.UPPER);
+        Map<String, Point3d> lower  = toMap(confirmed, LandmarkPoint.Slot.LOWER);
+        Map<String, Point3d> buccal = toMap(confirmed, LandmarkPoint.Slot.BUCCAL);
 
         // ── Calculate each component ──────────────────────────────────────
         int upperAnteriorRaw = calculateAnteriorSegmentScore(upper);
@@ -144,7 +154,11 @@ public class GeometricPARService {
                 .totalWeighted(totalWeighted)
                 .classification(classification)
                 .landmarksUsed((int) count)
-                .message("PAR score calculated from " + count + " 3D landmark points.")
+                .message(unconfirmedCount > 0
+                        ? "PAR score calculated from " + count + " confirmed 3D landmark points. " +
+                          unconfirmedCount + " unconfirmed ML-predicted point(s) were skipped — " +
+                          "confirm them first if they should be included."
+                        : "PAR score calculated from " + count + " 3D landmark points.")
                 .build();
     }
 

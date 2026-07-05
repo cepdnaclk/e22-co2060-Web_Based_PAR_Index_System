@@ -86,6 +86,38 @@ public class LandmarkService {
                 "deleted=" + deleted);
     }
 
+    // ── Confirm ML-predicted points for a slot ─────────────────────────────
+
+    /**
+     * Marks all ML_PREDICTED landmarks in one slot as confirmed, i.e. the
+     * clinician has reviewed them (optionally adjusting coordinates first
+     * via a normal submitPoints call) and accepts them as clinically valid.
+     * Only after this will auto-calculate include them.
+     */
+    @Transactional
+    public List<LandmarkDto.LandmarkResponse> confirmPredicted(Long caseId,
+                                                               LandmarkPoint.Slot slot,
+                                                               User performer) {
+        OrthoCase orthoCase = caseRepo.findById(caseId)
+                .orElseThrow(() -> new IllegalArgumentException("Case not found: " + caseId));
+
+        if (orthoCase.isFinalized()) {
+            throw new IllegalStateException("Cannot modify a finalised case.");
+        }
+
+        List<LandmarkPoint> predicted = landmarkRepo.findByOrthoCaseIdAndSlot(caseId, slot).stream()
+                .filter(p -> p.getSource() == LandmarkPoint.Source.ML_PREDICTED && !p.isConfirmed())
+                .collect(Collectors.toList());
+
+        predicted.forEach(p -> p.setConfirmed(true));
+        List<LandmarkPoint> saved = landmarkRepo.saveAll(predicted);
+
+        auditService.log(performer, "CONFIRM_ML_LANDMARKS", "OrthoCase", caseId,
+                "slot=" + slot + " count=" + saved.size());
+
+        return saved.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
     // ── Mapper ─────────────────────────────────────────────────────────────
 
     private LandmarkDto.LandmarkResponse toResponse(LandmarkPoint p) {
@@ -97,6 +129,8 @@ public class LandmarkService {
                 .y(p.getY())
                 .z(p.getZ())
                 .createdAt(p.getCreatedAt())
+                .source(p.getSource().name())
+                .confirmed(p.isConfirmed())
                 .build();
     }
 }

@@ -1,6 +1,44 @@
+# ── Node / Frontend ─────────────────────────────────────────────────────
 node_modules/
 dist/
 build/
 .env
+.env.local
+
+# ── Java / Backend (Maven) ──────────────────────────────────────────────
+backend/target/
+code/backend/target/
+*.class
+*.jar
+!code/ml-service/**/*.jar
+
+# ── IDE ──────────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
 .DS_Store
+
+# ── Logs ─────────────────────────────────────────────────────────────────
 *.log
+
+# ── Uploaded files (patient models, training scans) ─────────────────────
+# Never commit real or test patient data to the repo.
+backend/uploads/
+code/backend/uploads/
+
+# ── Python / ML service ─────────────────────────────────────────────────
+ml-service/venv/
+code/ml-service/venv/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Trained models / regressor output — regenerated locally via train_regressor.py,
+# not committed (would also risk leaking data-derived artifacts).
+ml-service/models/
+code/ml-service/models/
+*.joblib
+
+# ── Misc ─────────────────────────────────────────────────────────────────
+*.tmp
+*.bak

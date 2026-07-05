@@ -1,5 +1,6 @@
 package com.parsystem.controller;
 
+import com.parsystem.dto.LandmarkDto;
 import com.parsystem.entity.*;
 import com.parsystem.repository.*;
 import com.parsystem.service.*;
@@ -201,6 +202,29 @@ public class TrainingSetController {
                         "inline; filename=\"" + filename + "\"")
                 .header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
                 .body(resource);
+    }
+
+    // ── ML training readiness ──────────────────────────────────────────────
+    // No manual annotation step exists anymore: an APPROVED training set with
+    // its UPPER+LOWER 3D models and the undergraduate-submitted PAR score is
+    // immediately usable by train_regressor.py — see /ml-service/README.md.
+
+    /** How many APPROVED training sets currently have both UPPER and LOWER models (usable for PAR-regressor training). */
+    @GetMapping("/ml-readiness")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> mlReadiness() {
+        List<TrainingSet> approved = trainingSetRepository.findByStatus(TrainingSet.Status.APPROVED);
+        long usable = approved.stream()
+                .filter(ts -> {
+                    List<Model3DFile.Slot> slots = ts.getModelFiles().stream()
+                            .map(Model3DFile::getSlot).toList();
+                    return slots.contains(Model3DFile.Slot.UPPER) && slots.contains(Model3DFile.Slot.LOWER);
+                })
+                .count();
+        return ResponseEntity.ok(Map.of(
+                "approvedTrainingSets", approved.size(),
+                "usableForParRegressor", usable
+        ));
     }
 
     @DeleteMapping("/{id}")

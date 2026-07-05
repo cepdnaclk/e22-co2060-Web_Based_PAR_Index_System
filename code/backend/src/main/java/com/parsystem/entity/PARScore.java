@@ -40,11 +40,11 @@ public class PARScore {
     @JsonIgnore
     private OrthoCase orthoCase;
 
-    @Min(0) @Max(10)
+    @Min(0) @Max(20)
     @Column(name = "upper_anterior", nullable = false)
     private int upperAnterior;
 
-    @Min(0) @Max(10)
+    @Min(0) @Max(20)
     @Column(name = "lower_anterior", nullable = false)
     private int lowerAnterior;
 

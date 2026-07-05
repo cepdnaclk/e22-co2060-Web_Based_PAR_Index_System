@@ -61,10 +61,26 @@ public class LandmarkPoint {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    /** MANUAL = placed by a clinician. ML_PREDICTED = written by the landmark-prediction service. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Source source = Source.MANUAL;
+
+    /**
+     * MANUAL points are confirmed by definition. ML_PREDICTED points start
+     * unconfirmed and must be reviewed (edited/accepted) by a clinician
+     * before {@code auto-calculate} will treat the case as clinically final.
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean confirmed = true;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
 
     public enum Slot { UPPER, LOWER, BUCCAL }
+    public enum Source { MANUAL, ML_PREDICTED }
 }

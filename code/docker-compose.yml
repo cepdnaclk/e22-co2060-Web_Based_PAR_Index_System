@@ -39,10 +39,39 @@ services:
       JWT_SECRET: ${JWT_SECRET:-ChangeMeToASecureBase64Key32CharsMin}
       STORAGE_DIR: /app/uploads
       PORT: 8081
+      ML_SERVICE_URL: http://ml-service:5001
+      ML_SERVICE_ENABLED: ${ML_SERVICE_ENABLED:-false}
     ports:
       - "8081:8081"
     volumes:
       - uploads_data:/app/uploads
+
+  # ── ML service (geometric landmark detection + PAR regressor) ──────────
+  # Optional: the backend runs fine without this container — /predict-landmarks
+  # simply returns a clear "service not enabled" error until it's up.
+  # Unlike the old design, landmark detection needs NO training data at all;
+  # only the PAR-regressor cross-check (/predict-par) needs approved cases.
+  ml-service:
+    build: ./ml-service
+    container_name: par-ml-service
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-par_system}
+      DB_USER: ${DB_USER:-paruser}
+      DB_PASS: ${DB_PASS:-parpass}
+      MODEL_DIR: /models
+      UPLOADS_DIR: /uploads
+      MIN_SAMPLES: ${MIN_SAMPLES:-8}
+    ports:
+      - "5001:5001"
+    volumes:
+      - uploads_data:/uploads:ro   # read-only: ML service never writes clinical files
+      - ml_models:/models
 
   # ── React Frontend (production build via nginx) ───────────────────────
   frontend:
@@ -57,3 +86,4 @@ services:
 volumes:
   mysql_data:
   uploads_data:
+  ml_models:

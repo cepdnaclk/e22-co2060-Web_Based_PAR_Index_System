@@ -101,11 +101,14 @@ const SLOT_BG    = { UPPER: '#eff6ff', LOWER: '#f0fdf4', BUCCAL: '#fffbeb' }
 export default function LandmarkPanel({
   slot,
   placedPoints,
+  pointMeta = {},          // { [name]: { source: 'MANUAL'|'ML_PREDICTED', confirmed: bool } }
   activeLandmark,
   onSelectLandmark,
   onClear,
   onSubmitSlot,
   onAutoCalc,
+  onConfirmMl,             // fn() — confirm all ML_PREDICTED points in this slot
+  confirming = false,
   submitting  = false,
   calculating = false,
   totalPlaced = 0,
@@ -115,6 +118,10 @@ export default function LandmarkPanel({
   const placed  = defs.filter(d => placedPoints[d.name]).length
   const color   = SLOT_COLOR[slot] ?? '#6b7280'
   const bgLight = SLOT_BG[slot]    ?? '#f9fafb'
+  const unconfirmedCount = defs.filter(d => {
+    const meta = pointMeta[d.name]
+    return placedPoints[d.name] && meta?.source === 'ML_PREDICTED' && !meta?.confirmed
+  }).length
 
   return (
     <div style={{
@@ -163,6 +170,9 @@ export default function LandmarkPanel({
         {defs.map(def => {
           const isPlaced = !!placedPoints[def.name]
           const isActive = activeLandmark === def.name
+          const meta = pointMeta[def.name]
+          const isMl = meta?.source === 'ML_PREDICTED'
+          const isUnconfirmed = isMl && !meta?.confirmed
           return (
             <div
               key={def.name}
@@ -172,12 +182,14 @@ export default function LandmarkPanel({
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '6px 10px', borderRadius: 6, marginBottom: 3,
                 cursor: 'pointer',
-                background: isActive ? color : isPlaced ? '#f0fdf4' : '#fafafa',
+                background: isActive ? color : isUnconfirmed ? '#fffbeb' : isPlaced ? '#f0fdf4' : '#fafafa',
                 border: isActive
                   ? `1.5px solid ${color}`
-                  : isPlaced
-                    ? '1.5px solid #86efac'
-                    : '1.5px solid #e5e7eb',
+                  : isUnconfirmed
+                    ? '1.5px dashed #f59e0b'
+                    : isPlaced
+                      ? '1.5px solid #86efac'
+                      : '1.5px solid #e5e7eb',
                 transition: 'all 0.15s',
               }}
             >
@@ -186,19 +198,19 @@ export default function LandmarkPanel({
                 width: 20, height: 20, borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 11, fontWeight: 700, flexShrink: 0,
-                background: isPlaced ? '#16a34a' : isActive ? 'rgba(255,255,255,0.3)' : '#e5e7eb',
-                color: isPlaced ? '#fff' : isActive ? '#fff' : '#9ca3af',
+                background: isUnconfirmed ? '#f59e0b' : isPlaced ? '#16a34a' : isActive ? 'rgba(255,255,255,0.3)' : '#e5e7eb',
+                color: isPlaced || isUnconfirmed ? '#fff' : isActive ? '#fff' : '#9ca3af',
               }}>
-                {isPlaced ? '✓' : isActive ? '•' : '○'}
+                {isUnconfirmed ? '🤖' : isPlaced ? '✓' : isActive ? '•' : '○'}
               </span>
 
               <div style={{ flex: 1 }}>
                 <div style={{
                   fontFamily: 'monospace', fontWeight: 600,
-                  color: isActive ? '#fff' : isPlaced ? '#15803d' : '#374151',
+                  color: isActive ? '#fff' : isUnconfirmed ? '#b45309' : isPlaced ? '#15803d' : '#374151',
                   fontSize: 12,
                 }}>
-                  {def.name}
+                  {def.name}{isUnconfirmed && <span style={{ fontWeight: 500, fontSize: 10 }}> — ML suggestion</span>}
                 </div>
                 {isPlaced && !isActive && placedPoints[def.name] && (
                   <div style={{ fontSize: 10, color: '#6b7280', fontFamily: 'monospace' }}>
@@ -217,6 +229,31 @@ export default function LandmarkPanel({
           )
         })}
       </div>
+
+      {/* ML confirmation banner */}
+      {unconfirmedCount > 0 && (
+        <div style={{
+          margin: '0 14px 12px', padding: '8px 10px',
+          background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 6,
+        }}>
+          <div style={{ fontSize: 11, color: '#78350f', marginBottom: 6 }}>
+            {unconfirmedCount} ML-predicted point(s) awaiting your review.
+            Edit by re-placing, or confirm if they look correct.
+          </div>
+          <button
+            onClick={onConfirmMl}
+            disabled={confirming}
+            style={{
+              width: '100%', padding: '6px 0', borderRadius: 6, border: 'none',
+              cursor: confirming ? 'not-allowed' : 'pointer',
+              background: '#f59e0b', color: '#fff', fontWeight: 600, fontSize: 12,
+              opacity: confirming ? 0.7 : 1,
+            }}
+          >
+            {confirming ? '⏳ Confirming…' : `✔ Confirm ${unconfirmedCount} ML Point(s)`}
+          </button>
+        </div>
+      )}
 
       {/* Actions */}
       <div style={{ padding: '12px 14px', borderTop: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -249,8 +286,8 @@ export default function LandmarkPanel({
           </button>
         )}
 
-        {/* Auto-calculate — only show when all 3 slots have ≥1 point */}
-        {totalPlaced >= 3 && (
+        {/* Auto-calculate — only show when all 3 slots have ≥1 point AND a handler was provided */}
+        {totalPlaced >= 3 && onAutoCalc && (
           <button
             onClick={onAutoCalc}
             disabled={calculating}

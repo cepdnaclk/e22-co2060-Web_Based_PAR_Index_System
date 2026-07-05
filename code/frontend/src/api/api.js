@@ -97,6 +97,10 @@ export const landmarkApi = {
   get:           (caseId)       => api.get(`/cases/${caseId}/landmarks`),
   clear:         (caseId)       => api.delete(`/cases/${caseId}/landmarks`),
   autoCalculate: (caseId)       => api.post(`/cases/${caseId}/auto-calculate`),
+
+  // ML landmark prediction (automatic geometric detection — see /ml-service)
+  predict:       (caseId)       => api.post(`/cases/${caseId}/predict-landmarks`),
+  confirmSlot:   (caseId, slot) => api.post(`/cases/${caseId}/landmarks/${slot}/confirm`),
 }
 
 // ── Admin ─────────────────────────────────────────────────────────────────
