@@ -38,7 +38,7 @@ The public registration form does not offer the Administrator role.
 ### Prerequisites
 - Docker & Docker Compose
 - Java 17+ (for local development)
-- Node.js 20+ (for frontend development)
+- Node.js 20+ (for frontend development, and the root dev orchestrator — see below)
 - Python 3.11+ (for the ML service — local development)
 - MySQL 8.0
 
@@ -54,7 +54,34 @@ Services:
 - ML service: http://localhost:5001
 - MySQL: localhost:3306
 
-### Local Development
+### Local Development — one command (recommended)
+
+A root-level dev orchestrator runs the backend, frontend, and ML service
+together in a single terminal (labeled, color-coded output), instead of
+needing three separate terminal windows.
+
+**One-time setup:**
+```bash
+npm install
+```
+
+**Every time after that:**
+```bash
+npm run dev
+```
+
+This runs `mvn spring-boot:run`, `npm run dev` (frontend), and the
+Flask ML service together. `Ctrl+C` once stops all three.
+
+> Requires MySQL running separately (not managed by this script), and the
+> ML service's Python virtual environment already created at
+> `code/ml-service/venv/` (see ML service setup below). If your venv path
+> differs, edit the `dev:ml` script in the root `package.json`.
+
+### Local Development — running each service separately
+
+If you'd rather run things individually (e.g. to restart just one
+service without affecting the others):
 
 **Backend**
 ```bash
@@ -175,6 +202,11 @@ Every ML-predicted landmark is stored as `LandmarkPoint(source=ML_PREDICTED, con
 prediction can never silently become part of a real PAR score. Clinicians
 review, adjust if necessary, and confirm via
 `POST /api/v1/cases/{id}/landmarks/{slot}/confirm` before finalising a case.
+
+The backend has ML integration enabled by default (`ML_SERVICE_ENABLED=true`).
+If the ml-service isn't running, `/predict-landmarks` simply returns a
+clear error — nothing else in the application is affected. Set
+`ML_SERVICE_ENABLED=false` to disable the integration entirely.
 
 ### Known limitation (documented, not hidden)
 
