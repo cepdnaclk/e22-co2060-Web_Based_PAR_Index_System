@@ -42,3 +42,9 @@ code/ml-service/models/
 # ── Misc ─────────────────────────────────────────────────────────────────
 *.tmp
 *.bak
+
+# Local configuration
+.env
+.env.*
+application-local.yml
+backend/src/main/resources/application-local.yml

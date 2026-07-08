@@ -3,9 +3,9 @@ spring:
     name: par-index-system
 
   datasource:
-    url: jdbc:mysql://localhost:3306/par_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: root
-    password: HAhamed03@
+    url: jdbc:mysql://${DB_HOST:db}:${DB_PORT:3306}/${DB_NAME:par_system}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USER:paruser}
+    password: ${DB_PASS:parpass}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
@@ -42,7 +42,7 @@ server:
 
 app:
   jwt:
-    secret: cGFyc3lzdGVtc2VjcmV0a2V5Zm9yand0dG9rZW5nZW5lcmF0aW9u
+    secret: ${JWT_SECRET}
     expiration-ms: 86400000
 
   storage:
