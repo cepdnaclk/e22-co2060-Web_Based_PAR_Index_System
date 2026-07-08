@@ -13,7 +13,7 @@ services:
       MYSQL_USER: ${DB_USER:-paruser}
       MYSQL_PASSWORD: ${DB_PASS:-parpass}
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -64,6 +64,8 @@ services:
       DB_NAME: ${DB_NAME:-par_system}
       DB_USER: ${DB_USER:-paruser}
       DB_PASS: ${DB_PASS:-parpass}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       MODEL_DIR: /models
       UPLOADS_DIR: /uploads
       MIN_SAMPLES: ${MIN_SAMPLES:-8}
