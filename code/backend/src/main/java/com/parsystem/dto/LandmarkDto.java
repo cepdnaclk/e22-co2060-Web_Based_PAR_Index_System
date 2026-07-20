@@ -49,8 +49,6 @@ public class LandmarkDto {
         private String pointName;
         private double x, y, z;
         private LocalDateTime createdAt;
-        private String  source;      // MANUAL / ML_PREDICTED
-        private boolean confirmed;
     }
 
     // ── Response: result of automatic PAR calculation ──────────────────
@@ -86,48 +84,29 @@ public class LandmarkDto {
         private String message;
     }
 
-    // ── ML prediction: request sent to the ML microservice ─────────────
-
-    @Data
-    @Builder
-    public static class PredictRequest {
-        private String slot;        // UPPER / LOWER / BUCCAL
-        private String meshPath;    // absolute path resolvable by the ML service
-    }
-
-    // ── ML prediction: response from the ML microservice ───────────────
-
-    @Data
-    public static class PredictResponse {
-        private String modelVersion;
-        private double confidence;      // mean landmark-detection confidence, 0-1
-        private List<PointData> points;
-    }
-
-    // ── Response: outcome of requesting ML landmark prediction for a case ─
-
     @Data
     @Builder
     public static class PredictLandmarksResponse {
         private int landmarksPredicted;
         private String modelVersion;
         private double confidence;
-        private String message;
-
-        // Optional: ML PAR-score estimate (from features.py + train_regressor.py),
-        // shown alongside the geometric PAR calculation as a cross-check.
-        // Null until the regressor has been trained on enough approved cases.
         private Double mlParEstimate;
         private String mlParModelVersion;
+        private String message;
     }
 
-    // ── ML PAR-score estimate response ──────────────────────────────────
+    @Data
+    @Builder
+    public static class PredictResponse {
+        private List<PointData> points;
+        private String modelVersion;
+        private double confidence;
+    }
 
     @Data
+    @Builder
     public static class PredictParResponse {
-        private double estimatedPar;
+        private Double estimatedPar;
         private String modelVersion;
-        private int trainedOnSamples;
-        private double crossValidationMeanAbsError;
     }
 }

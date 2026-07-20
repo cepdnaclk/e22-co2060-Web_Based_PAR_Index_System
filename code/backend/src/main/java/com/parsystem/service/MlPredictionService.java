@@ -9,6 +9,7 @@ import com.parsystem.repository.LandmarkPointRepository;
 import com.parsystem.repository.OrthoCaseRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MlPredictionService {
 
+    @Qualifier("mlRestTemplate")
     private final RestTemplate restTemplate;
     private final OrthoCaseRepository caseRepo;
     private final LandmarkPointRepository landmarkRepo;

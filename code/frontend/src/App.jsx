@@ -1,6 +1,11 @@
+// frontend/src/App.jsx
+// REQUIREMENT 12: Wrap individual clinical components in ErrorBoundary.
+// Never wrap the entire App in one ErrorBoundary.
+
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 
+import ErrorBoundary   from './components/ErrorBoundary'
 import Layout          from './components/Layout'
 import Login           from './pages/Login'
 import Register        from './pages/Register'
@@ -35,7 +40,7 @@ export default function App() {
       <Route element={<RequireAuth><Layout /></RequireAuth>}>
         <Route path="/dashboard" element={<Dashboard />} />
 
-        {/* Patients — orthodontist can create/edit; admin can only view */}
+        {/* Patients */}
         <Route path="/patients" element={
           <RequireAuth roles={['ORTHODONTIST','ADMIN']}>
             <PatientList />
@@ -51,13 +56,19 @@ export default function App() {
             <NewCase />
           </RequireAuth>
         }/>
+
+        {/* Case detail — REQUIREMENT 12: CaseDetail uses ErrorBoundary internally
+            for STLViewer, LandmarkPanel, MLStatusPanel, AutoScoreResult */}
         <Route path="/cases/:id" element={
           <RequireAuth roles={['ORTHODONTIST']}>
-            <CaseDetail />
+            {/* REQUIREMENT 12: Wrap CaseDetail's heavy clinical section */}
+            <ErrorBoundary>
+              <CaseDetail />
+            </ErrorBoundary>
           </RequireAuth>
         }/>
 
-        {/* Training — undergraduate only */}
+        {/* Training */}
         <Route path="/training/submit" element={
           <RequireAuth roles={['UNDERGRADUATE']}>
             <TrainingSubmit />

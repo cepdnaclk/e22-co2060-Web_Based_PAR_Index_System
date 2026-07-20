@@ -10,6 +10,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 
@@ -30,8 +31,9 @@ public class PatientController {
     /** Both ORTHODONTIST and ADMIN can view a patient record. */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
-    public ResponseEntity<Patient> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(patientService.getById(id));
+    public ResponseEntity<Patient> getById(@PathVariable Long id,
+                                           @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(patientService.getById(id, user));
     }
 
     /** Only ORTHODONTIST can create patients. */
@@ -41,24 +43,11 @@ public class PatientController {
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal User user) {
 
-        if (body.get("referenceId") == null || body.get("referenceId").trim().isEmpty()) {
-            throw new IllegalArgumentException("Reference ID is required.");
-        }
-        if (body.get("name") == null || body.get("name").trim().isEmpty()) {
-            throw new IllegalArgumentException("Name is required.");
-        }
-        if (body.get("dateOfBirth") == null || body.get("dateOfBirth").trim().isEmpty()) {
-            throw new IllegalArgumentException("Date of Birth is required.");
-        }
-        if (body.get("contact") == null || body.get("contact").trim().isEmpty()) {
-            throw new IllegalArgumentException("Contact details are required.");
-        }
-
         Patient patient = Patient.builder()
-                .referenceId(body.get("referenceId").trim())
-                .name(body.get("name").trim())
-                .dateOfBirth(LocalDate.parse(body.get("dateOfBirth").trim()))
-                .contact(body.get("contact").trim())
+                .referenceId(trimOrNull(body.get("referenceId")))
+                .name(trimOrNull(body.get("name")))
+                .dateOfBirth(parseDate(body.get("dateOfBirth")))
+                .contact(trimOrNull(body.get("contact")))
                 .build();
 
         return ResponseEntity.ok(patientService.create(patient, user));
@@ -72,20 +61,10 @@ public class PatientController {
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal User user) {
 
-        if (body.get("name") == null || body.get("name").trim().isEmpty()) {
-            throw new IllegalArgumentException("Name is required.");
-        }
-        if (body.get("dateOfBirth") == null || body.get("dateOfBirth").trim().isEmpty()) {
-            throw new IllegalArgumentException("Date of Birth is required.");
-        }
-        if (body.get("contact") == null || body.get("contact").trim().isEmpty()) {
-            throw new IllegalArgumentException("Contact details are required.");
-        }
-
         Patient updates = Patient.builder()
-                .name(body.get("name").trim())
-                .dateOfBirth(LocalDate.parse(body.get("dateOfBirth").trim()))
-                .contact(body.get("contact").trim())
+                .name(trimOrNull(body.get("name")))
+                .dateOfBirth(parseDate(body.get("dateOfBirth")))
+                .contact(trimOrNull(body.get("contact")))
                 .build();
 
         return ResponseEntity.ok(patientService.update(id, updates, user));
@@ -100,19 +79,26 @@ public class PatientController {
         return ResponseEntity.noContent().build();
     }
 
-    /** Only ORTHODONTIST can delete patients. */
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ORTHODONTIST')")
-    public ResponseEntity<Void> delete(@PathVariable Long id,
-                                        @AuthenticationPrincipal User user) {
-        patientService.delete(id, user);
-        return ResponseEntity.noContent().build();
-    }
-
     /** ORTHODONTIST and ADMIN can search. */
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
-    public ResponseEntity<List<Patient>> search(@RequestParam String query) {
-        return ResponseEntity.ok(patientService.search(query));
+    public ResponseEntity<List<Patient>> search(@RequestParam String query,
+                                                @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(patientService.search(query, user));
+    }
+
+    private String trimOrNull(String value) {
+        return value == null ? null : value.trim();
+    }
+
+    private LocalDate parseDate(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value.trim());
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("dateOfBirth must use ISO format YYYY-MM-DD.");
+        }
     }
 }

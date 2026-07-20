@@ -7,9 +7,17 @@
 --
 --  These are the ONLY administrator accounts in the system.
 --  The public registration form does not allow ADMIN role selection.
+--
+--  BUG FIX: changed from a plain INSERT to INSERT IGNORE. The equivalent
+--  Flyway migration (V4) already used INSERT IGNORE for the same two rows,
+--  but this file used a plain INSERT — re-running it against a database
+--  that has already been seeded (e.g. a second `docker compose up` without
+--  wiping the MySQL volume) throws a duplicate-key error on the unique
+--  email constraint and aborts. INSERT IGNORE makes this file safe to run
+--  more than once, consistent with the migration it mirrors.
 -- ============================================================
 
-INSERT INTO users (name, email, password_hash, role, is_active)
+INSERT IGNORE INTO users (name, email, password_hash, role, is_active)
 VALUES
   (
     'Admin E22014',

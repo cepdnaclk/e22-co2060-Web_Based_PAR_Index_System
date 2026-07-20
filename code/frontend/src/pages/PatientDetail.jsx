@@ -65,19 +65,19 @@ export default function PatientDetail() {
       const scoreRows = (s) => {
         if (!s) return ''
         const rows = [
-          ['Upper Anterior',      s.upperAnterior,   s.upperAnterior  * 1],
-          ['Right Buccal Segment',s.buccalRight,     s.buccalRight    * 1],
-          ['Left Buccal Segment', s.buccalLeft,      s.buccalLeft     * 1],
-          ['Overjet',             s.overjet,         s.overjet        * 6],
-          ['Overbite',            s.overbite,        s.overbite       * 2],
-          ['Centreline',          s.centreline,      s.centreline     * 4],
-          ['Lower Anterior',      s.lowerAnterior,   s.lowerAnterior  * 1],
+          ['Upper Anterior',      s.upperAnterior,      s.upperAnteriorW],
+          ['Right Buccal Segment',s.rightBuccal,        s.rightBuccalW],
+          ['Left Buccal Segment', s.leftBuccal,         s.leftBuccalW],
+          ['Overjet',             s.overjet,            s.overjetW],
+          ['Overbite',            s.overbite,           s.overbiteW],
+          ['Midline',             s.midline,            s.midlineW],
+          ['Lower Anterior',      s.lowerAnterior,      s.lowerAnteriorW],
         ]
         return rows.map(([label, raw, weighted]) => `
           <tr>
             <td style="padding:7px 12px;border-bottom:1px solid #e5e7eb;">${label}</td>
             <td style="padding:7px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${raw ?? '—'}</td>
-            <td style="padding:7px 12px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:600;">${(raw != null) ? weighted : '—'}</td>
+            <td style="padding:7px 12px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:600;">${weighted ?? '—'}</td>
           </tr>`).join('')
       }
 

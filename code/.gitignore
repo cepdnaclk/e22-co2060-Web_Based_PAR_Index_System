@@ -1,0 +1,59 @@
+# ── REQUIREMENT 16: Never commit secrets or model weights ─────────────────
+
+# Environment / secrets
+.env
+.env.local
+.env.production
+
+# ML model weights — can be gigabytes, contain trained IP
+*.pt
+*.pth
+models/
+!models/.gitkeep
+
+# ── Java / Spring Boot ────────────────────────────────────────────────────
+target/
+*.class
+*.jar
+*.war
+.mvn/
+*.iml
+
+# ── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+
+# Preprocessed training tensors (derived from patient data — never commit)
+data/preprocessed/
+data/raw/
+failed_samples.log
+
+# Uploaded STL files (patient data — never commit)
+uploads/
+
+# ── Node / React ──────────────────────────────────────────────────────────
+node_modules/
+dist/
+.vite/
+
+# ── IDE ───────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Logs ──────────────────────────────────────────────────────────────────
+*.log
+logs/
+spring.log

@@ -262,16 +262,6 @@ export default function TrainingReview() {
                 {selected.reviewerComment && <span> Feedback: "{selected.reviewerComment}"</span>}
               </div>
             )}
-
-            {/* Once approved, this case is automatically usable by the ML
-                pipeline (geometric landmark detector + PAR regressor) — no
-                further action needed here. See /ml-service/README.md. */}
-            {selected.status === 'APPROVED' && (
-              <div className="alert alert-success" style={{ marginTop: 0 }}>
-                ✅ This case now automatically contributes to the ML training pool —
-                no further action needed from you.
-              </div>
-            )}
           </div>
         )}
       </div>

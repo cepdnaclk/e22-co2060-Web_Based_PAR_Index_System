@@ -43,18 +43,18 @@ export default function Case3DViewer({
   onPointPlaced,
   activeSlot,
   onSlotChange,
-  resolveUrl,   // optional: (id, slot) => relative URL — defaults to clinical-case models
 }) {
   const [internalSlot, setInternalSlot] = useState('UPPER')
   const slot    = activeSlot    ?? internalSlot
   const setSlot = onSlotChange  ?? setInternalSlot
 
-  const resolver = resolveUrl ?? caseApi.getModelFileUrl
-
+  // ✅ FIX: Use caseApi.getModelFileUrl(caseId, slotKey) which returns
+  //   `cases/${caseId}/models/${slotKey}` — the correct relative path.
+  //   Old code returned `/api/v1/cases/files/${file.id}` (wrong endpoint, wrong format).
   function getModelUrl(slotKey) {
     const file = modelFiles.find(f => f.slot === slotKey)
     if (!file) return null
-    return resolver(caseId, slotKey)
+    return caseApi.getModelFileUrl(caseId, slotKey)
   }
 
   const currentUrl = getModelUrl(slot)

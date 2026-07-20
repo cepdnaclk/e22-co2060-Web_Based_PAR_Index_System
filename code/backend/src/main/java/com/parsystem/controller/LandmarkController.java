@@ -1,14 +1,13 @@
 package com.parsystem.controller;
 
 import com.parsystem.dto.LandmarkDto;
-import com.parsystem.entity.LandmarkPoint;
 import com.parsystem.entity.User;
 import com.parsystem.service.GeometricPARService;
 import com.parsystem.service.LandmarkService;
-import com.parsystem.service.MlPredictionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,21 +21,18 @@ import java.util.Map;
  * consistent with the existing CaseController routes.
  *
  * Endpoints:
- *   POST   /api/v1/cases/{id}/landmarks             — save points for one slot (MANUAL, confirmed)
- *   GET    /api/v1/cases/{id}/landmarks             — retrieve all stored landmarks
- *   DELETE /api/v1/cases/{id}/landmarks             — clear all landmarks
- *   POST   /api/v1/cases/{id}/predict-landmarks     — ask the ML service to predict landmarks
- *   POST   /api/v1/cases/{id}/landmarks/{slot}/confirm — clinician confirms ML predictions for a slot
- *   POST   /api/v1/cases/{id}/auto-calculate        — run geometric PAR & save result (confirmed points only)
+ *   POST   /api/v1/cases/{id}/landmarks         — save points for one slot
+ *   GET    /api/v1/cases/{id}/landmarks         — retrieve all stored landmarks
+ *   DELETE /api/v1/cases/{id}/landmarks         — clear all landmarks
+ *   POST   /api/v1/cases/{id}/auto-calculate    — run geometric PAR & save result
  */
 @RestController
 @RequestMapping("/api/v1/cases/{id}")
 @RequiredArgsConstructor
 public class LandmarkController {
 
-    private final LandmarkService     landmarkService;
+    private final LandmarkService    landmarkService;
     private final GeometricPARService geometricPARService;
-    private final MlPredictionService mlPredictionService;
 
     // ── POST /landmarks ──────────────────────────────────────────────────
 
@@ -56,6 +52,7 @@ public class LandmarkController {
      * Re-submitting the same slot replaces its previous points atomically.
      */
     @PostMapping("/landmarks")
+    @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
     public ResponseEntity<List<LandmarkDto.LandmarkResponse>> submitLandmarks(
             @PathVariable Long id,
             @Valid @RequestBody LandmarkDto.SubmitRequest request,
@@ -73,6 +70,7 @@ public class LandmarkController {
      * Returns an empty list if none have been placed yet.
      */
     @GetMapping("/landmarks")
+    @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
     public ResponseEntity<List<LandmarkDto.LandmarkResponse>> getLandmarks(
             @PathVariable Long id) {
 
@@ -86,45 +84,13 @@ public class LandmarkController {
      * Useful when the clinician wants to restart point placement.
      */
     @DeleteMapping("/landmarks")
+    @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
     public ResponseEntity<Map<String, String>> clearLandmarks(
             @PathVariable Long id,
             @AuthenticationPrincipal User user) {
 
         landmarkService.clearPoints(id, user);
         return ResponseEntity.ok(Map.of("message", "All landmarks cleared."));
-    }
-
-    // ── POST /predict-landmarks ───────────────────────────────────────────
-
-    /**
-     * Asks the ML landmark-prediction microservice to predict landmarks for
-     * every 3D model already uploaded on this case. Results are stored as
-     * ML_PREDICTED + unconfirmed — they do NOT affect auto-calculate until
-     * a clinician reviews and confirms them via /landmarks/{slot}/confirm
-     * (or overwrites them with a manual /landmarks submission).
-     */
-    @PostMapping("/predict-landmarks")
-    public ResponseEntity<LandmarkDto.PredictLandmarksResponse> predictLandmarks(
-            @PathVariable Long id,
-            @AuthenticationPrincipal User user) {
-
-        return ResponseEntity.ok(mlPredictionService.predictForCase(id, user));
-    }
-
-    // ── POST /landmarks/{slot}/confirm ────────────────────────────────────
-
-    /**
-     * Clinician confirms the ML-predicted landmarks for one slot as
-     * clinically accurate (after reviewing/adjusting them). Only confirmed
-     * landmarks are used by auto-calculate.
-     */
-    @PostMapping("/landmarks/{slot}/confirm")
-    public ResponseEntity<List<LandmarkDto.LandmarkResponse>> confirmPredicted(
-            @PathVariable Long id,
-            @PathVariable LandmarkPoint.Slot slot,
-            @AuthenticationPrincipal User user) {
-
-        return ResponseEntity.ok(landmarkService.confirmPredicted(id, slot, user));
     }
 
     // ── POST /auto-calculate ─────────────────────────────────────────────
@@ -142,6 +108,7 @@ public class LandmarkController {
      * The case must not be finalised.
      */
     @PostMapping("/auto-calculate")
+    @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
     public ResponseEntity<LandmarkDto.AutoScoreResponse> autoCalculate(
             @PathVariable Long id,
             @AuthenticationPrincipal User user) {

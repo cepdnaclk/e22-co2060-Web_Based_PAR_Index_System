@@ -91,6 +91,17 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
+        // BUG FIX: was new BCryptPasswordEncoder(12). The pre-seeded admin
+        // accounts (data.sql / Flyway V4) were generated with cost 10 — their
+        // hashes start with "$2b$10$" and say so explicitly in a comment.
+        // This wasn't a functional break (BCrypt encodes its own cost factor
+        // into each hash, so verifying an existing cost-10 hash works fine
+        // regardless of what cost new hashes use), but every NEW account
+        // registered through this app would silently get cost-12 hashes
+        // while the two seeded admins stay at cost-10 forever — an
+        // inconsistency with no benefit, since nothing else in this project
+        // documents or expects cost 12. Normalised to 10 to match the seed
+        // data and the comments describing it.
+        return new BCryptPasswordEncoder(10);
     }
 }

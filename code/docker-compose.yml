@@ -1,91 +1,91 @@
-version: "3.9"
+﻿services:
 
-services:
-
-  # ── MySQL ────────────────────────────────────────────────────────────
-  db:
+  mysql:
     image: mysql:8.0
-    container_name: par-db
-    restart: unless-stopped
+    container_name: par-mysql
+    env_file:
+      - .env
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:-rootpass}
-      MYSQL_DATABASE: ${DB_NAME:-par_system}
-      MYSQL_USER: ${DB_USER:-paruser}
-      MYSQL_PASSWORD: ${DB_PASS:-parpass}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_DATABASE: par_system
     ports:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "sh", "-c", "mysqladmin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\""]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
-  # ── Spring Boot API ──────────────────────────────────────────────────
-  backend:
+  par-ml:
+    build: ./ml_engine
+    container_name: par-ml
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: par_system
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ml_models:/app/models
+      - ml_data:/app/data
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  par-backend:
     build: ./backend
     container_name: par-backend
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_NAME: ${DB_NAME:-par_system}
-      DB_USER: ${DB_USER:-paruser}
-      DB_PASS: ${DB_PASS:-parpass}
-      JWT_SECRET: ${JWT_SECRET:-ChangeMeToASecureBase64Key32CharsMin}
-      STORAGE_DIR: /app/uploads
-      PORT: 8081
-      ML_SERVICE_URL: http://ml-service:5001
-      ML_SERVICE_ENABLED: ${ML_SERVICE_ENABLED:-false}
+    env_file:
+      - .env
     ports:
       - "8081:8081"
-    volumes:
-      - uploads_data:/app/uploads
-
-  # ── ML service (geometric landmark detection + PAR regressor) ──────────
-  # Optional: the backend runs fine without this container — /predict-landmarks
-  # simply returns a clear "service not enabled" error until it's up.
-  # Unlike the old design, landmark detection needs NO training data at all;
-  # only the PAR-regressor cross-check (/predict-par) needs approved cases.
-  ml-service:
-    build: ./ml-service
-    container_name: par-ml-service
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_NAME: ${DB_NAME:-par_system}
-      DB_USER: ${DB_USER:-paruser}
-      DB_PASS: ${DB_PASS:-parpass}
-      DB_PASSWORD: ${DB_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      MODEL_DIR: /models
-      UPLOADS_DIR: /uploads
-      MIN_SAMPLES: ${MIN_SAMPLES:-8}
-    ports:
-      - "5001:5001"
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/par_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      ML_SERVICE_URL: http://par-ml:8000
+      # REMOVED: STORAGE_BASE_DIR / CLINICAL_DIR / TRAINING_DIR.
+      # application.yml hardcodes app.storage.base-dir=./uploads,
+      # clinical-dir=clinical, training-dir=training, which StorageService
+      # resolves as SUBDIRECTORIES of base-dir. These env vars were never
+      # actually read, and if they ever get wired in as absolute paths
+      # (as they were set here) they silently reproduce the exact
+      # storage_path corruption bug described in StorageService's
+      # constructor comment. Removed rather than left as a loaded gun.
     volumes:
-      - uploads_data:/uploads:ro   # read-only: ML service never writes clinical files
-      - ml_models:/models
-
-  # ── React Frontend (production build via nginx) ───────────────────────
-  frontend:
-    build: ./frontend
-    container_name: par-frontend
-    restart: unless-stopped
+      - backend_uploads:/app/uploads
     depends_on:
-      - backend
+      mysql:
+        condition: service_healthy
+
+  par-frontend:
+    image: node:20-alpine
+    container_name: par-frontend
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host"
     ports:
-      - "80:80"
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+    environment:
+      VITE_API_URL: http://localhost:8081
+    depends_on:
+      - par-backend
 
 volumes:
   mysql_data:
-  uploads_data:
   ml_models:
+  ml_data:
+  backend_uploads:

@@ -1,5 +1,11 @@
+// frontend/src/pages/AdminPanel.jsx
+// REQUIREMENT 12: Wrap MLStatusPanel in ErrorBoundary
+// REQUIREMENT 14: Embed MLStatusPanel in its own "ML Engine" tab
+
 import { useEffect, useState } from 'react'
 import { adminApi, trainingApi } from '../api/api'
+import MLStatusPanel from '../components/MLStatusPanel'
+import ErrorBoundary from '../components/ErrorBoundary'
 
 const ROLES      = ['ORTHODONTIST', 'UNDERGRADUATE', 'ADMIN']
 const ROLE_BADGE = {
@@ -21,6 +27,7 @@ export default function AdminPanel() {
         {[
           { key: 'users',    label: '👤 User Management' },
           { key: 'training', label: '📁 Submissions Overview' },
+          { key: 'ml',       label: '🤖 ML Engine' },
           { key: 'audit',    label: '📋 Audit Log' },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
@@ -37,6 +44,12 @@ export default function AdminPanel() {
 
       {tab === 'users'    && <UsersTab />}
       {tab === 'training' && <TrainingOverviewTab />}
+      {tab === 'ml'       && (
+        // REQUIREMENT 12: Wrap in ErrorBoundary
+        <ErrorBoundary>
+          <MLStatusPanel />
+        </ErrorBoundary>
+      )}
       {tab === 'audit'    && <AuditTab />}
     </div>
   )
@@ -73,8 +86,7 @@ function UsersTab() {
     } catch (err) { alert(err.response?.data?.message || 'Error.') }
   }
 
-  // Non-admin users only (exclude admins from display)
-  const nonAdmins = users.filter(u => u.role !== 'ADMIN')
+  const nonAdmins      = users.filter(u => u.role !== 'ADMIN')
   const orthodontists  = nonAdmins.filter(u => u.role === 'ORTHODONTIST')
   const undergraduates = nonAdmins.filter(u => u.role === 'UNDERGRADUATE')
 
@@ -89,13 +101,11 @@ function UsersTab() {
 
   return (
     <>
-      {/* Stats — order: Orthodontists, Undergraduates */}
       <div className="row" style={{ marginBottom: 20 }}>
         <StatCard value={orthodontists.length}  label="Orthodontists"  color="var(--blue-mid)" />
         <StatCard value={undergraduates.length} label="Undergraduates" color="var(--purple)" />
       </div>
 
-      {/* Filter row */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
         <input
           placeholder="Search by name or email…"
@@ -165,7 +175,7 @@ function UsersTab() {
   )
 }
 
-// ── Submissions Overview Tab (READ-ONLY for admin) ────────────────────────
+// ── Submissions Overview Tab ──────────────────────────────────────────────
 function TrainingOverviewTab() {
   const [sets, setSets]       = useState([])
   const [loading, setLoading] = useState(true)
@@ -190,24 +200,22 @@ function TrainingOverviewTab() {
 
   const filtered = (filter === 'ALL' ? sets : sets.filter(s => s.status === filter))
     .filter(s =>
-      (s.anonymisedLabel    ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      (s.submittedBy?.name  ?? '').toLowerCase().includes(search.toLowerCase())
+      (s.anonymisedLabel   ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (s.submittedBy?.name ?? '').toLowerCase().includes(search.toLowerCase())
     )
 
   return (
     <>
       <div className="alert alert-info" style={{ marginBottom: 20 }}>
-        👁 <strong>Read-only view.</strong> Approving and rejecting submissions is handled by the assigned orthodontist in their Review Submissions section.
+        👁 <strong>Read-only view.</strong> Approving and rejecting submissions is handled by the assigned orthodontist.
       </div>
 
-      {/* Stats */}
       <div className="row" style={{ marginBottom: 20 }}>
         <StatCard value={counts.PENDING}  label="Pending"  color="var(--amber)" />
         <StatCard value={counts.APPROVED} label="Approved" color="var(--green)" />
         <StatCard value={counts.REJECTED} label="Rejected" color="var(--coral)" />
       </div>
 
-      {/* Filters */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <input placeholder="Search by label or student name…"
           value={search} onChange={e => setSearch(e.target.value)}
@@ -233,14 +241,8 @@ function TrainingOverviewTab() {
           <table>
             <thead>
               <tr>
-                <th>Label</th>
-                <th>Submitted By</th>
-                <th>Reviewer (Orthodontist)</th>
-                <th>PAR Score</th>
-                <th>Models</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Reviewer Note</th>
+                <th>Label</th><th>Submitted By</th><th>Reviewer</th>
+                <th>PAR Score</th><th>Models</th><th>Date</th><th>Status</th><th>Note</th>
               </tr>
             </thead>
             <tbody>
@@ -248,20 +250,12 @@ function TrainingOverviewTab() {
                 <tr key={t.id}>
                   <td style={{ fontWeight: 500 }}>{t.anonymisedLabel}</td>
                   <td style={{ fontSize: 13 }}>{t.submittedBy?.name ?? '—'}</td>
-                  <td style={{ fontSize: 13 }}>
-                    {t.reviewer ? `Dr. ${t.reviewer.name}` : '—'}
-                  </td>
-                  <td>
-                    <span style={{ fontWeight: 700, color: 'var(--blue-dark)' }}>
-                      {t.groundTruthPar}
-                    </span>
-                  </td>
+                  <td style={{ fontSize: 13 }}>{t.reviewer ? `Dr. ${t.reviewer.name}` : '—'}</td>
+                  <td><span style={{ fontWeight: 700, color: 'var(--blue-dark)' }}>{t.groundTruthPar}</span></td>
                   <td>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                       {(t.modelFiles ?? []).map(f => (
-                        <span key={f.id} className="badge badge-purple" style={{ fontSize: 11 }}>
-                          {f.slot}
-                        </span>
+                        <span key={f.id} className="badge badge-purple" style={{ fontSize: 11 }}>{f.slot}</span>
                       ))}
                       {(!t.modelFiles || t.modelFiles.length === 0) && (
                         <span className="badge badge-gray" style={{ fontSize: 11 }}>None</span>
@@ -271,12 +265,8 @@ function TrainingOverviewTab() {
                   <td style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                     {new Date(t.submittedAt).toLocaleDateString()}
                   </td>
-                  <td>
-                    <span className={`badge ${STATUS_BADGE[t.status]}`}>{t.status}</span>
-                  </td>
-                  <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    {t.reviewerComment ?? '—'}
-                  </td>
+                  <td><span className={`badge ${STATUS_BADGE[t.status]}`}>{t.status}</span></td>
+                  <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t.reviewerComment ?? '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -313,34 +303,42 @@ function AuditTab() {
     ARCHIVE_PATIENT:        'badge-gray',
     CREATE_CASE:            'badge-green',
     CALCULATE_PAR:          'badge-blue',
+    AUTO_CALCULATE_PAR:     'badge-blue',
     FINALIZE_CASE:          'badge-blue',
+    CASE_UNFINALIZED:       'badge-coral',
     UPLOAD_3D_MODELS:       'badge-purple',
     UPLOAD_TRAINING_MODELS: 'badge-purple',
     CREATE_TRAINING_SET:    'badge-amber',
     REVIEW_TRAINING_SET:    'badge-coral',
     DELETE_TRAINING_SET:    'badge-coral',
+    ML_PREDICTION:          'badge-blue',
+    ML_PREDICTION_FAILED:   'badge-coral',
+    ML_TRAINING_STARTED:    'badge-amber',
+    ML_TRAINING_COMPLETED:  'badge-green',
+    ML_TRAINING_FAILED:     'badge-coral',
+    ML_MODEL_ROLLBACK:      'badge-coral',
+    PAR_VALIDATION_FAILED:  'badge-coral',
+    FRONTEND_ERROR:         'badge-gray',
   }
 
   const allActions = ['ALL', ...Object.keys(ACTION_COLOR)]
 
   const filtered = logs.filter(log => {
     const matchAction = actionFilter === 'ALL' || log.action === actionFilter
-    const matchSearch = (log.performedBy?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-                        (log.action ?? '').toLowerCase().includes(search.toLowerCase()) ||
-                        (log.entityType ?? '').toLowerCase().includes(search.toLowerCase())
+    const matchSearch =
+      (log.performedBy?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (log.action            ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (log.entityType        ?? '').toLowerCase().includes(search.toLowerCase())
     return matchAction && matchSearch
   })
 
   return (
     <>
-      {/* Filters */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <input placeholder="Search by user, action or entity…"
           value={search} onChange={e => setSearch(e.target.value)}
           style={{ maxWidth: 280 }} />
-        <select
-          value={actionFilter}
-          onChange={e => setActionFilter(e.target.value)}
+        <select value={actionFilter} onChange={e => setActionFilter(e.target.value)}
           style={{ width: 'auto', padding: '7px 12px', fontSize: 13 }}>
           {allActions.map(a => (
             <option key={a} value={a}>{a === 'ALL' ? 'All Actions' : a.replace(/_/g, ' ')}</option>
@@ -402,11 +400,12 @@ function AuditTab() {
   )
 }
 
+// ── Shared StatCard ───────────────────────────────────────────────────────
 function StatCard({ value, label, color }) {
   return (
-    <div className="stat-card col">
-      <div className="stat-card-value" style={{ color }}>{value}</div>
-      <div className="stat-card-label">{label}</div>
+    <div className="card" style={{ flex: 1, minWidth: 100, textAlign: 'center', padding: '16px 10px' }}>
+      <div style={{ fontSize: 28, fontWeight: 800, color }}>{value}</div>
+      <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{label}</div>
     </div>
   )
 }

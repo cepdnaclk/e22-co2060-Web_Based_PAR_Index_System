@@ -1,0 +1,23 @@
+# BUG FIX: no .gitignore existed anywhere in this project. Added so build
+# output and any local secret overrides don't get committed.
+
+# Secrets
+.env
+.env.*
+!.env.example
+application-local.yml
+application-local.properties
+
+# Maven build output
+target/
+*.jar
+*.war
+
+# Uploaded files (local dev storage)
+uploads/
+
+# Editor / OS
+.vscode/
+.idea/
+*.iml
+.DS_Store
