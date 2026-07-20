@@ -21,7 +21,7 @@
       start_period: 30s
 
   par-ml:
-    build: ./ml_engine
+    build: ./ml_service
     container_name: par-ml
     env_file:
       - .env
@@ -33,14 +33,24 @@
       DB_NAME: par_system
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD}
+      ML_SERVICE_SECRET: ${ML_SERVICE_SECRET}
+
     volumes:
       - ml_models:/app/models
       - ml_data:/app/data
+
     depends_on:
       mysql:
         condition: service_healthy
+
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"
+        ]
       interval: 15s
       timeout: 5s
       retries: 10
@@ -53,21 +63,18 @@
       - .env
     ports:
       - "8081:8081"
+
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/par_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       ML_SERVICE_URL: http://par-ml:8000
-      # REMOVED: STORAGE_BASE_DIR / CLINICAL_DIR / TRAINING_DIR.
-      # application.yml hardcodes app.storage.base-dir=./uploads,
-      # clinical-dir=clinical, training-dir=training, which StorageService
-      # resolves as SUBDIRECTORIES of base-dir. These env vars were never
-      # actually read, and if they ever get wired in as absolute paths
-      # (as they were set here) they silently reproduce the exact
-      # storage_path corruption bug described in StorageService's
-      # constructor comment. Removed rather than left as a loaded gun.
+      ML_SERVICE_SECRET: ${ML_SERVICE_SECRET}
+
     volumes:
       - backend_uploads:/app/uploads
     depends_on:
       mysql:
+        condition: service_healthy
+      par-ml:
         condition: service_healthy
 
   par-frontend:
