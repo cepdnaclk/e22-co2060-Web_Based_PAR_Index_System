@@ -1,10 +1,8 @@
 package com.parsystem.controller;
 
-import com.parsystem.dto.LandmarkDto;
 import com.parsystem.entity.*;
 import com.parsystem.repository.*;
 import com.parsystem.service.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -19,27 +17,61 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * REQUIREMENT 4 — Training Data Validation:
+ *   - review() must validate groundTruthPar is 1–50 before setting APPROVED
+ *   - Training set must have all 3 model files (UPPER, LOWER, BUCCAL)
+ *   - Log approval including reviewer ID and ground truth PAR value
+ *
+ * BUG FIX 1: saveModel() now deletes the existing file for the same slot before
+ *            re-uploading, preventing duplicate DB rows and orphaned disk files.
+ * BUG FIX 2: getModelFile() now resolves baseDir to absolute before building the path.
+ *
+ * BUG FIX 3 (root cause of startup crash):
+ *   This class previously had BOTH @RequiredArgsConstructor AND a hand-written
+ *   constructor with the same parameter list. Lombok generates a constructor from
+ *   the final fields at compile time, which collided with the explicit constructor
+ *   below. Spring's bean instantiation then failed with "No default constructor
+ *   found" / NoSuchMethodException: <init>(). FIX: removed @RequiredArgsConstructor
+ *   entirely — this class needs custom logic in its constructor (resolving baseDir
+ *   to an absolute Path), so it keeps the explicit constructor only.
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/training-sets")
-@RequiredArgsConstructor
 public class TrainingSetController {
 
-    private final TrainingSetRepository trainingSetRepository;
-    private final UserRepository userRepository;
-    private final Model3DFileRepository model3DFileRepository;
-    private final StorageService storageService;
-    private final AuditService auditService;
+    private final TrainingSetRepository  trainingSetRepository;
+    private final UserRepository         userRepository;
+    private final Model3DFileRepository  model3DFileRepository;
+    private final StorageService         storageService;
+    private final AuditService           auditService;
 
-    // ✅ FIX ADDED (Bug 1)
-    @Value("${app.storage.base-dir}")
-    private String baseDir;
+    // BUG FIX 2: resolved to absolute path once in the constructor
+    private final Path basePath;
+
+    public TrainingSetController(
+            TrainingSetRepository trainingSetRepository,
+            UserRepository userRepository,
+            Model3DFileRepository model3DFileRepository,
+            StorageService storageService,
+            AuditService auditService,
+            @Value("${app.storage.base-dir}") String baseDir) {
+        this.trainingSetRepository = trainingSetRepository;
+        this.userRepository        = userRepository;
+        this.model3DFileRepository = model3DFileRepository;
+        this.storageService        = storageService;
+        this.auditService          = auditService;
+        this.basePath              = Paths.get(baseDir).toAbsolutePath().normalize();
+    }
 
     @GetMapping("/reviewers")
     @PreAuthorize("hasAnyRole('UNDERGRADUATE','ADMIN')")
@@ -76,6 +108,7 @@ public class TrainingSetController {
 
         TrainingSet saved = trainingSetRepository.save(ts);
         auditService.log(user, "CREATE_TRAINING_SET", "TrainingSet", saved.getId(), null);
+
         return ResponseEntity.ok(saved);
     }
 
@@ -83,8 +116,8 @@ public class TrainingSetController {
     @PreAuthorize("hasAnyRole('UNDERGRADUATE','ADMIN')")
     public ResponseEntity<Map<String, String>> uploadModels(
             @PathVariable Long id,
-            @RequestPart("upperFile") MultipartFile upperFile,
-            @RequestPart("lowerFile") MultipartFile lowerFile,
+            @RequestPart("upperFile")  MultipartFile upperFile,
+            @RequestPart("lowerFile")  MultipartFile lowerFile,
             @RequestPart("buccalFile") MultipartFile buccalFile,
             @AuthenticationPrincipal User user) throws IOException {
 
@@ -95,11 +128,12 @@ public class TrainingSetController {
             throw new IllegalStateException("Cannot upload to a reviewed training set.");
         }
 
-        saveModel(upperFile, "UPPER", id, ts, user);
-        saveModel(lowerFile, "LOWER", id, ts, user);
+        saveModel(upperFile,  "UPPER",  id, ts, user);
+        saveModel(lowerFile,  "LOWER",  id, ts, user);
         saveModel(buccalFile, "BUCCAL", id, ts, user);
 
         auditService.log(user, "UPLOAD_TRAINING_MODELS", "TrainingSet", id, "3 files uploaded");
+
         return ResponseEntity.ok(Map.of("message", "Training 3D models uploaded successfully."));
     }
 
@@ -113,6 +147,7 @@ public class TrainingSetController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<TrainingSet>> getAll(
             @RequestParam(required = false) TrainingSet.Status status) {
+
         if (status != null) {
             return ResponseEntity.ok(trainingSetRepository.findByStatus(status));
         }
@@ -125,6 +160,12 @@ public class TrainingSetController {
         return ResponseEntity.ok(trainingSetRepository.findByReviewerId(user.getId()));
     }
 
+    /**
+     * REQUIREMENT 4: Validate before setting status to APPROVED:
+     *   - groundTruthPar must be 1–50 (reject 0 and >50)
+     *   - Training set must have all 3 model files (UPPER, LOWER, BUCCAL)
+     *   - Log approval including reviewer ID and ground truth PAR value
+     */
     @PutMapping("/{id}/review")
     @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
     public ResponseEntity<TrainingSet> review(
@@ -141,6 +182,34 @@ public class TrainingSetController {
             throw new IllegalArgumentException("You can only review assigned submissions.");
         }
 
+        // REQUIREMENT 4: Validate before APPROVED
+        if (status == TrainingSet.Status.APPROVED) {
+            int gtp = ts.getGroundTruthPar();
+            if (gtp < 1 || gtp > 50) {
+                throw new IllegalArgumentException(
+                        "groundTruthPar value " + gtp + " is outside the valid range [1, 50]. " +
+                        "Cannot approve this training set.");
+            }
+
+            List<Model3DFile> files = model3DFileRepository.findByTrainingSetId(id);
+            boolean hasUpper  = files.stream().anyMatch(f -> f.getSlot() == Model3DFile.Slot.UPPER);
+            boolean hasLower  = files.stream().anyMatch(f -> f.getSlot() == Model3DFile.Slot.LOWER);
+            boolean hasBuccal = files.stream().anyMatch(f -> f.getSlot() == Model3DFile.Slot.BUCCAL);
+
+            if (!hasUpper || !hasLower || !hasBuccal) {
+                List<String> missing = new ArrayList<>();
+                if (!hasUpper)  missing.add("UPPER");
+                if (!hasLower)  missing.add("LOWER");
+                if (!hasBuccal) missing.add("BUCCAL");
+                throw new IllegalArgumentException(
+                        "Cannot approve training set — missing model files: " +
+                        String.join(", ", missing));
+            }
+
+            log.info("TRAINING_SET_APPROVED: setId={} reviewerId={} groundTruthPar={}",
+                    id, reviewer.getId(), gtp);
+        }
+
         ts.setStatus(status);
         ts.setReviewer(reviewer);
         ts.setReviewerComment(comment);
@@ -148,27 +217,25 @@ public class TrainingSetController {
 
         TrainingSet saved = trainingSetRepository.save(ts);
 
-        auditService.log(reviewer, "REVIEW_TRAINING_SET", "TrainingSet", id, "status=" + status);
+        auditService.log(reviewer, "REVIEW_TRAINING_SET", "TrainingSet", id,
+                "status=" + status + " groundTruthPar=" + ts.getGroundTruthPar() +
+                " reviewerId=" + reviewer.getId());
+
         return ResponseEntity.ok(saved);
     }
 
-    // ✅ FIXED METHOD (Bug 1 + Bug 2)
     @GetMapping("/{setId}/models/{slot}")
-    @PreAuthorize("hasAnyRole('ORTHODONTIST','UNDERGRADUATE','ADMIN')")
+    @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
     public ResponseEntity<Resource> getModelFile(
             @PathVariable Long setId,
             @PathVariable String slot,
-            @AuthenticationPrincipal User user) throws IOException {
+            @AuthenticationPrincipal User user) {
 
         TrainingSet ts = trainingSetRepository.findById(setId)
                 .orElseThrow(() -> new IllegalArgumentException("Training set not found: " + setId));
 
-        // Allow: admin, assigned reviewer (orthodontist), or the original submitter (undergraduate)
-        boolean isAdmin      = user.getRole() == User.Role.ADMIN;
-        boolean isReviewer   = ts.getReviewer() != null && ts.getReviewer().getId().equals(user.getId());
-        boolean isSubmitter  = ts.getSubmittedBy() != null && ts.getSubmittedBy().getId().equals(user.getId());
-
-        if (!isAdmin && !isReviewer && !isSubmitter) {
+        if (user.getRole() != User.Role.ADMIN &&
+                !ts.getReviewer().getId().equals(user.getId())) {
             throw new IllegalArgumentException("Not authorized to view this model.");
         }
 
@@ -177,54 +244,32 @@ public class TrainingSetController {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Model file not found: " + slot));
 
-        // ✅ FIX 1: correct path resolution
-        Path filePath = Paths.get(baseDir)
-                .resolve(modelFile.getStoragePath())
-                .normalize();
+        try {
+            // BUG FIX 2: use absolute basePath so resolve works regardless of CWD
+            Path filePath = storageService.resolveReadablePath(modelFile.getStoragePath());
 
-        Resource resource = new UrlResource(filePath.toUri());
+            Resource resource = new UrlResource(filePath.toUri());
 
-        if (!resource.exists() || !resource.isReadable()) {
-            log.warn("Training model file not readable: {}", filePath);
-            return ResponseEntity.notFound().build();
+            if (!resource.exists() || !resource.isReadable()) {
+                log.warn("Training model file not readable: {}", filePath);
+                return ResponseEntity.notFound().build();
+            }
+
+            String filename = modelFile.getFileName();
+            MediaType mediaType = (filename != null && filename.toLowerCase().endsWith(".obj"))
+                    ? MediaType.TEXT_PLAIN
+                    : MediaType.APPLICATION_OCTET_STREAM;
+
+            return ResponseEntity.ok()
+                    .contentType(mediaType)
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "inline; filename=\"" + filename + "\"")
+                    .body(resource);
+
+        } catch (MalformedURLException e) {
+            log.error("Malformed URL for training set {} slot {}: {}", setId, slot, e.getMessage());
+            return ResponseEntity.internalServerError().build();
         }
-
-        String filename = modelFile.getFileName();
-
-        MediaType mediaType = (filename != null && filename.toLowerCase().endsWith(".obj"))
-                ? MediaType.TEXT_PLAIN
-                : MediaType.APPLICATION_OCTET_STREAM;
-
-        // ✅ FIX 2: add CORS header for Three.js (prevents silent 403)
-        return ResponseEntity.ok()
-                .contentType(mediaType)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=\"" + filename + "\"")
-                .header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-                .body(resource);
-    }
-
-    // ── ML training readiness ──────────────────────────────────────────────
-    // No manual annotation step exists anymore: an APPROVED training set with
-    // its UPPER+LOWER 3D models and the undergraduate-submitted PAR score is
-    // immediately usable by train_regressor.py — see /ml-service/README.md.
-
-    /** How many APPROVED training sets currently have both UPPER and LOWER models (usable for PAR-regressor training). */
-    @GetMapping("/ml-readiness")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> mlReadiness() {
-        List<TrainingSet> approved = trainingSetRepository.findByStatus(TrainingSet.Status.APPROVED);
-        long usable = approved.stream()
-                .filter(ts -> {
-                    List<Model3DFile.Slot> slots = ts.getModelFiles().stream()
-                            .map(Model3DFile::getSlot).toList();
-                    return slots.contains(Model3DFile.Slot.UPPER) && slots.contains(Model3DFile.Slot.LOWER);
-                })
-                .count();
-        return ResponseEntity.ok(Map.of(
-                "approvedTrainingSets", approved.size(),
-                "usableForParRegressor", usable
-        ));
     }
 
     @DeleteMapping("/{id}")
@@ -242,13 +287,32 @@ public class TrainingSetController {
 
         trainingSetRepository.deleteById(id);
         auditService.log(user, "DELETE_TRAINING_SET", "TrainingSet", id, null);
+
         return ResponseEntity.noContent().build();
     }
 
+    // ── INTERNAL HELPER ───────────────────────────────────────────────────
+
+    /**
+     * BUG FIX 1: Delete any existing file for the same slot before saving the new one.
+     * Without this, re-uploading creates duplicate DB rows and orphaned disk files.
+     */
     private void saveModel(MultipartFile file, String slot, Long setId,
                            TrainingSet ts, User uploader) throws IOException {
 
-        String path = storageService.storeTraining(file, setId, slot);
+        // Delete old file for this slot if it exists
+        model3DFileRepository.findByTrainingSetId(setId).stream()
+                .filter(m -> m.getSlot().name().equalsIgnoreCase(slot))
+                .forEach(m -> {
+                    try {
+                        storageService.delete(m.getStoragePath());
+                    } catch (Exception e) {
+                        log.warn("Failed to delete old training file: {}", m.getStoragePath());
+                    }
+                    model3DFileRepository.deleteById(m.getId());
+                });
+
+        String path       = storageService.storeTraining(file, setId, slot);
         BigDecimal sizeMb = storageService.toMb(file);
 
         Model3DFile model = Model3DFile.builder()

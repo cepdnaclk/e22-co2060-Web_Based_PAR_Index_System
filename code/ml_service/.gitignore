@@ -1,0 +1,24 @@
+# BUG FIX: no .gitignore existed anywhere in this project (or any of the
+# other three — frontend/backend/database), which is how ml/.env ended up
+# committed with real secret values in the first place.
+
+# Secrets — never commit a filled-in .env
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Model artifacts and training outputs — large, environment-specific
+models/*.pt
+data/preprocessed/*.pt
+failed_samples.log
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

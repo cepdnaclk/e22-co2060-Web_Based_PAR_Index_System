@@ -11,4 +11,5 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
     List<Patient> findByCreatedByIdAndIsArchivedFalse(Long userId);
     Optional<Patient> findByReferenceId(String referenceId);
     List<Patient> findByNameContainingIgnoreCaseAndIsArchivedFalse(String name);
+    List<Patient> findByCreatedByIdAndNameContainingIgnoreCaseAndIsArchivedFalse(Long userId, String name);
 }

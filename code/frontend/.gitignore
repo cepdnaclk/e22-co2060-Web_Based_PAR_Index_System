@@ -1,0 +1,19 @@
+# BUG FIX: no .gitignore existed anywhere in this project.
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+*.local

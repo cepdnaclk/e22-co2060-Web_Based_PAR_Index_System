@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { patientApi, trainingApi, adminApi } from '../api/api'
+import { patientApi, trainingApi, adminApi, mlApi } from '../api/api'
 
 export default function Dashboard() {
   const { user, isUndergrad, isAdmin, isOrthodontist } = useAuth()
-  const [stats, setStats]     = useState({})
-  const [loading, setLoading] = useState(true)
+  const [stats, setStats]       = useState({})
+  const [mlStatus, setMlStatus] = useState(null)
+  const [loading, setLoading]   = useState(true)
 
   useEffect(() => {
     async function load() {
@@ -45,6 +46,14 @@ export default function Dashboard() {
         setStats(s)
       } catch (_) {}
       finally { setLoading(false) }
+
+      // Live ML status — never let this block the rest of the dashboard
+      try {
+        const { data } = await mlApi.status()
+        setMlStatus(data)
+      } catch (_) {
+        setMlStatus(null)
+      }
     }
     load()
   }, [])
@@ -143,16 +152,80 @@ export default function Dashboard() {
         </>
       )}
 
-      {/* ML banner */}
-      <div className="card" style={{ borderLeft: '4px solid var(--amber)', background: 'var(--amber-light)' }}>
+      {/* ML banner — driven by real /api/v1/ml/status, not a static placeholder */}
+      <MLBanner mlStatus={mlStatus} />
+    </div>
+  )
+}
+
+function MLBanner({ mlStatus }) {
+  // Still loading or status endpoint unreachable — neutral, not "coming soon"
+  if (!mlStatus) {
+    return (
+      <div className="card" style={{ borderLeft: '4px solid var(--text-muted)', background: 'var(--bg-subtle, #f8fafc)' }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
           <span style={{ fontSize: 20 }}>🤖</span>
           <div>
-            <div style={{ fontWeight: 600, color: 'var(--amber)', fontSize: 14 }}>ML Prediction — Coming Soon</div>
+            <div style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: 14 }}>ML Prediction Status Unavailable</div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>
-              Automated PAR score prediction from 3D dental models will be available once the ML model
-              is trained on the approved undergraduate dataset.
+              Couldn't reach the ML service status endpoint right now.
             </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const hasModel = !!mlStatus.latestVersion && mlStatus.currentStatus !== 'NO_RUNS'
+  const isTraining = mlStatus.currentStatus === 'TRAINING'
+
+  if (isTraining) {
+    return (
+      <div className="card" style={{ borderLeft: '4px solid var(--blue-mid)', background: '#eff6ff' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          <span style={{ fontSize: 20 }}>🤖</span>
+          <div>
+            <div style={{ fontWeight: 600, color: 'var(--blue-mid)', fontSize: 14 }}>ML Model Training In Progress</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>
+              Training on {mlStatus.approvedDatasets} approved dataset{mlStatus.approvedDatasets === 1 ? '' : 's'}. New predictions will use this model once training completes.
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (hasModel) {
+    return (
+      <div className="card" style={{ borderLeft: '4px solid var(--green, #16a34a)', background: '#f0fdf4' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          <span style={{ fontSize: 20 }}>🤖</span>
+          <div>
+            <div style={{ fontWeight: 600, color: '#16a34a', fontSize: 14 }}>
+              ML Prediction Live — Model {mlStatus.latestVersion}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>
+              Automated PAR prediction from uploaded 3D models is active, trained on {mlStatus.approvedDatasets} approved
+              dataset{mlStatus.approvedDatasets === 1 ? '' : 's'}{mlStatus.bestAccuracy ? ` (best accuracy ${mlStatus.bestAccuracy}%)` : ''}.
+              Predictions remain experimental and never replace the clinical PAR score.
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Genuinely no trained model yet
+  return (
+    <div className="card" style={{ borderLeft: '4px solid var(--amber)', background: 'var(--amber-light)' }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        <span style={{ fontSize: 20 }}>🤖</span>
+        <div>
+          <div style={{ fontWeight: 600, color: 'var(--amber)', fontSize: 14 }}>ML Prediction Not Yet Trained</div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>
+            {mlStatus.approvedDatasets > 0
+              ? `${mlStatus.approvedDatasets} approved dataset${mlStatus.approvedDatasets === 1 ? '' : 's'} ready. An admin needs to start a training run before predictions go live.`
+              : 'No approved training datasets yet. Once undergraduates submit STL sets and an orthodontist approves them, an admin can start training.'}
           </div>
         </div>
       </div>

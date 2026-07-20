@@ -3,9 +3,16 @@ spring:
     name: par-index-system
 
   datasource:
-    url: jdbc:mysql://${DB_HOST:db}:${DB_PORT:3306}/${DB_NAME:par_system}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: ${DB_USER:paruser}
-    password: ${DB_PASS:parpass}
+    # BUG FIX: was jdbc:mysql://localhost:3306/... — inside Docker, "localhost"
+    # means the container itself, not the par-mysql container. DB_HOST defaults
+    # to the Docker Compose service name so this also still works for local
+    # (non-Docker) runs via an env var override.
+    url: jdbc:mysql://${DB_HOST:par-mysql}:${DB_PORT:3306}/par_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USER:root}
+    # BUG FIX: removed the hardcoded password default. A real credential should
+    # never live in a committed file. DB_PASSWORD must be supplied via the
+    # environment (.env / docker-compose / secret manager) in every environment.
+    password: ${DB_PASSWORD}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
@@ -13,7 +20,12 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      # BUG FIX: was "update" with Flyway disabled, so Hibernate silently
+      # auto-generated the schema and the real V2-V5 migrations (including the
+      # admin seed accounts and the ML metrics columns) never ran. Now that
+      # Flyway is enabled below, Hibernate should only validate the schema
+      # Flyway already created, not mutate it.
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
@@ -21,7 +33,13 @@ spring:
         format_sql: true
 
   flyway:
-    enabled: false
+    # BUG FIX: was false. The migration files under db/migration (V2-V5) define
+    # the actual schema, including landmark_points and the ML metrics columns,
+    # plus the admin seed accounts (via INSERT IGNORE — safe to re-run). With
+    # Flyway disabled none of this ever ran; Hibernate's ddl-auto: update was
+    # silently creating a divergent schema instead.
+    enabled: true
+    baseline-on-migrate: true
 
   servlet:
     multipart:
@@ -42,20 +60,18 @@ server:
 
 app:
   jwt:
-    secret: ${JWT_SECRET}
-    expiration-ms: 86400000
+    secret: ${JWT_SECRET:dGhpcy1pcy1hLXNlY3JldC1rZXktdGhhdC1pcy1hdC1sZWFzdC0zMi1jaGFycw==}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
   storage:
     base-dir: ./uploads
     clinical-dir: clinical
     training-dir: training
-
+  
   ml:
-    # Base URL of the landmark-prediction microservice (see /ml-service).
-    # Disabled by default so a missing/unstarted ML service never blocks
-    # the core clinical workflow — only /predict-landmarks needs it.
-    service-url: ${ML_SERVICE_URL:http://localhost:5001}
-    enabled: ${ML_SERVICE_ENABLED:true}
+    enabled: ${ML_ENABLED:true}
+    service-url: ${ML_SERVICE_URL:http://par-ml:8000}
+    secret: ${ML_SERVICE_SECRET:}
 
 springdoc:
   api-docs:

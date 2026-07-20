@@ -13,27 +13,17 @@ export default function NewCase() {
 
   // ── Auto-detect the correct stage on mount ───────────────────────────────
   // Logic:
-  //   • If there are any unfinalised cases -> Block creation
   //   • If no cases exist yet            → PRE  (first visit, always pre-treatment)
+  //   • If no finalised PRE case exists  → PRE  (still in pre-treatment phase)
   //   • If a finalised PRE case exists   → POST (pre done, subsequent scans are post-treatment)
   useEffect(() => {
     async function detectStage() {
       try {
         const { data: existingCases } = await caseApi.listByPatient(patientId)
-        const hasUnfinalised = existingCases.some(c => !(c.finalized === true || c.isFinalized === true))
-        
-        if (hasUnfinalised) {
-          setStage('POST') // Doesn't matter
-          setStageInfo({
-            type: 'pending-any',
-            message: 'There is an unfinalised case for this patient. Please finalise it before creating new records.',
-          })
-          return
-        }
-
         const hasFinalisedPre = existingCases.some(
           c => c.stage === 'PRE' && (c.finalized === true || c.isFinalized === true)
         )
+        const hasPre = existingCases.some(c => c.stage === 'PRE')
 
         if (hasFinalisedPre) {
           setStage('POST')
@@ -43,10 +33,17 @@ export default function NewCase() {
           })
         } else {
           setStage('PRE')
-          setStageInfo({
-            type: 'first',
-            message: 'This is the first case for this patient — set as pre-treatment by default.',
-          })
+          if (existingCases.length === 0) {
+            setStageInfo({
+              type: 'first',
+              message: 'This is the first case for this patient — set as pre-treatment by default.',
+            })
+          } else if (hasPre && !hasFinalisedPre) {
+            setStageInfo({
+              type: 'pending-pre',
+              message: 'A pre-treatment case exists but has not been finalised yet. Finalise it before creating post-treatment records.',
+            })
+          }
         }
       } catch {
         // If we can't load cases, default to PRE and let backend enforce
@@ -100,11 +97,11 @@ export default function NewCase() {
 
         {/* Contextual stage hint */}
         {stageInfo && (
-          <div className={`alert ${stageInfo.type === 'pending-any' ? 'alert-error' : 'alert-info'}`}
+          <div className={`alert ${stageInfo.type === 'pending-pre' ? 'alert-error' : 'alert-info'}`}
                style={{ marginBottom: 14, fontSize: 13 }}>
             {stageInfo.type === 'first'       && '🆕 '}
             {stageInfo.type === 'auto-post'   && '✅ '}
-            {stageInfo.type === 'pending-any' && '⚠️ '}
+            {stageInfo.type === 'pending-pre' && '⚠️ '}
             {stageInfo.message}
           </div>
         )}
@@ -137,11 +134,9 @@ export default function NewCase() {
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>{s.desc}</div>
                     {isLocked && (
                       <div style={{ fontSize: 11, color: 'var(--coral)', marginTop: 4 }}>
-                        {stageInfo?.type === 'pending-any'
-                          ? 'Resolve pending case first'
-                          : s.value === 'PRE'
-                            ? 'Pre-treatment is complete for this patient'
-                            : 'Requires a finalised pre-treatment case'}
+                        {s.value === 'PRE'
+                          ? 'Pre-treatment is complete for this patient'
+                          : 'Requires a finalised pre-treatment case'}
                       </div>
                     )}
                   </label>
@@ -157,7 +152,7 @@ export default function NewCase() {
           </div>
 
           <div className="flex gap-8">
-            <button className="btn btn-primary" disabled={saving || stageInfo?.type === 'pending-any'}>
+            <button className="btn btn-primary" disabled={saving || stageInfo?.type === 'pending-pre'}>
               {saving ? <span className="spinner" /> : 'Create Case'}
             </button>
             <button type="button" className="btn btn-ghost" onClick={() => navigate(-1)}>Cancel</button>

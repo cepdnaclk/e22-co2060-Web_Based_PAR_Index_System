@@ -69,7 +69,13 @@ CREATE TABLE IF NOT EXISTS model3d_files (
     uploaded_by   BIGINT        NOT NULL,
     uploaded_at   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_model_case     FOREIGN KEY (case_id)         REFERENCES ortho_cases(id),
-    CONSTRAINT fk_model_training FOREIGN KEY (training_set_id) REFERENCES training_sets(id),
+    -- BUG FIX: fk_model_training was declared here AND again via ALTER TABLE
+    -- below. training_sets isn't created until after this table, so this
+    -- inline constraint referenced a table that doesn't exist yet at this
+    -- point in the script — MySQL would reject it (or, if somehow tolerated,
+    -- the later ALTER TABLE adding the same constraint name would fail with
+    -- "Duplicate key name"). The fix is the one below, after training_sets
+    -- exists; this duplicate inline declaration is removed.
     CONSTRAINT fk_model_user     FOREIGN KEY (uploaded_by)     REFERENCES users(id)
 );
 
@@ -89,9 +95,12 @@ CREATE TABLE IF NOT EXISTS training_sets (
     CONSTRAINT fk_training_reviewer FOREIGN KEY (reviewer_id)  REFERENCES users(id)
 );
 
--- Fix FK ordering: model3d_files references training_sets which was created after.
--- MySQL allows FK to reference a table declared later in the same script only when
--- both tables exist. Since training_sets is now defined, add the constraint now.
+-- model3d_files.training_set_id references training_sets, which is declared
+-- after model3d_files in this script. MySQL can't satisfy a FK at CREATE
+-- TABLE time against a table that doesn't exist yet, so the constraint is
+-- added here instead, now that training_sets exists. This is the only
+-- declaration of fk_model_training in this file (see the removed duplicate
+-- inline attempt inside model3d_files above).
 ALTER TABLE model3d_files
     ADD CONSTRAINT fk_model_training FOREIGN KEY (training_set_id) REFERENCES training_sets(id);
 

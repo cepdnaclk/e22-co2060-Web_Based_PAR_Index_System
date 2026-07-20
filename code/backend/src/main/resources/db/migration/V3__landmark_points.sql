@@ -13,5 +13,5 @@ CREATE TABLE IF NOT EXISTS landmark_points (
     CONSTRAINT fk_landmark_case FOREIGN KEY (case_id) REFERENCES ortho_cases(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_landmark_case      ON landmark_points(case_id);
-CREATE INDEX IF NOT EXISTS idx_landmark_case_slot ON landmark_points(case_id, slot);
+CREATE INDEX idx_landmark_case      ON landmark_points(case_id);
+CREATE INDEX idx_landmark_case_slot ON landmark_points(case_id, slot);

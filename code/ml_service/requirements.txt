@@ -1,0 +1,21 @@
+# PAR ML Engine — Python dependencies
+# REQUIREMENT 17: Exact versions as specified
+
+fastapi==0.110.0
+uvicorn==0.29.0
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.2.2+cpu
+trimesh==4.3.2
+numpy==1.26.4
+pydantic-settings==2.2.1
+python-dotenv==1.0.1
+filelock==3.13.4
+mysql-connector-python==8.3.0
+slowapi==0.1.9
+
+# Required by trimesh for mesh sampling
+scipy>=1.12.0
+
+# Required by slowapi
+limits>=3.6.0
+python-multipart>=0.0.9

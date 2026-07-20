@@ -20,20 +20,6 @@ export default function Register() {
 
   const handle = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
-  const getPasswordStrength = (pass) => {
-    let score = 0
-    if (!pass) return 0
-    if (pass.length >= 8) score += 1
-    if (/[A-Z]/.test(pass)) score += 1
-    if (/[0-9]/.test(pass)) score += 1
-    if (/[^A-Za-z0-9]/.test(pass)) score += 1
-    return score
-  }
-
-  const strengthScore = getPasswordStrength(form.password)
-  const strengthColors = ['var(--border)', 'var(--coral)', 'var(--amber)', '#eab308', 'var(--green)']
-  const strengthLabels = ['', 'Weak', 'Fair', 'Good', 'Strong']
-
   const submit = async e => {
     e.preventDefault()
     setError('')
@@ -113,28 +99,7 @@ export default function Register() {
                 )}
               </button>
             </div>
-            {form.password ? (
-              <div style={{ marginTop: '8px' }}>
-                <div style={{ display: 'flex', gap: '4px', height: '4px', marginBottom: '4px' }}>
-                  {[1, 2, 3, 4].map(idx => (
-                    <div key={idx} style={{ 
-                      flex: 1, 
-                      borderRadius: '2px', 
-                      background: idx <= strengthScore ? strengthColors[strengthScore] : 'var(--gray-200)',
-                      transition: 'background 0.3s'
-                    }} />
-                  ))}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                  <span className="form-hint" style={{ margin: 0 }}>Minimum 8 characters</span>
-                  <span style={{ color: strengthScore >= 3 ? 'var(--green)' : 'var(--text-muted)', fontWeight: 500 }}>
-                    {strengthLabels[strengthScore]}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <span className="form-hint">Minimum 8 characters</span>
-            )}
+            <span className="form-hint">Minimum 8 characters</span>
           </div>
 
           <div className="form-group">

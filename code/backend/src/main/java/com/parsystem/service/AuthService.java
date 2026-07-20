@@ -30,6 +30,19 @@ public class AuthService {
             throw new IllegalArgumentException("Administrator accounts cannot be created through self-registration.");
         }
 
+        // BUG FIX: DENTIST was removed from the system (see UserController's
+        // changeRole(), which explicitly rejects it: "DENTIST role is no
+        // longer supported. Use ORTHODONTIST instead."), but registration
+        // never enforced the same rule. The frontend's Register.jsx doesn't
+        // offer DENTIST as an option, but the API itself accepted it, and a
+        // DENTIST account has no reachable endpoints anywhere in
+        // SecurityConfig — it's a permanently locked-out account with no
+        // self-service or admin path to fix it short of editing the database.
+        if (request.getRole() == User.Role.DENTIST) {
+            throw new IllegalArgumentException(
+                    "DENTIST role is no longer supported. Use ORTHODONTIST instead.");
+        }
+
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())

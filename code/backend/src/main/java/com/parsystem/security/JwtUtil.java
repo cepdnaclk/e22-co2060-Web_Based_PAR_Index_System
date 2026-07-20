@@ -5,6 +5,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import jakarta.annotation.PostConstruct;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -21,8 +22,19 @@ public class JwtUtil {
     @Value("${app.jwt.expiration-ms}")
     private long expirationMs;
 
+    @PostConstruct
+    void validateSecret() {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("JWT secret must be configured via JWT_SECRET.");
+        }
+    }
+
     private SecretKey key() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        byte[] decoded = Decoders.BASE64.decode(secret);
+        if (decoded.length < 32) {
+            throw new IllegalStateException("JWT secret must decode to at least 32 bytes.");
+        }
+        return Keys.hmacShaKeyFor(decoded);
     }
 
     public String generateToken(UserDetails userDetails) {

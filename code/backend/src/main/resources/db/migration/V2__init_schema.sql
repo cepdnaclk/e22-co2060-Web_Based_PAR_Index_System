@@ -100,11 +100,11 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     CONSTRAINT fk_audit_user FOREIGN KEY (performed_by) REFERENCES users(id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_patients_created_by ON patients(created_by);
-CREATE INDEX IF NOT EXISTS idx_cases_patient        ON ortho_cases(patient_id);
-CREATE INDEX IF NOT EXISTS idx_cases_user           ON ortho_cases(created_by);
-CREATE INDEX IF NOT EXISTS idx_model_case           ON model3d_files(case_id);
-CREATE INDEX IF NOT EXISTS idx_model_training       ON model3d_files(training_set_id);
-CREATE INDEX IF NOT EXISTS idx_training_status      ON training_sets(status);
-CREATE INDEX IF NOT EXISTS idx_audit_user           ON audit_logs(performed_by);
-CREATE INDEX IF NOT EXISTS idx_audit_entity         ON audit_logs(entity_type, entity_id);
+CREATE INDEX idx_patients_created_by ON patients(created_by);
+CREATE INDEX idx_cases_patient        ON ortho_cases(patient_id);
+CREATE INDEX idx_cases_user           ON ortho_cases(created_by);
+CREATE INDEX idx_model_case           ON model3d_files(case_id);
+CREATE INDEX idx_model_training       ON model3d_files(training_set_id);
+CREATE INDEX idx_training_status      ON training_sets(status);
+CREATE INDEX idx_audit_user           ON audit_logs(performed_by);
+CREATE INDEX idx_audit_entity         ON audit_logs(entity_type, entity_id);

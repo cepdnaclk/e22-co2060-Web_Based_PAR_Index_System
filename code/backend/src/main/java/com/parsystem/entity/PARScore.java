@@ -40,11 +40,11 @@ public class PARScore {
     @JsonIgnore
     private OrthoCase orthoCase;
 
-    @Min(0) @Max(20)
+    @Min(0) @Max(10)
     @Column(name = "upper_anterior", nullable = false)
     private int upperAnterior;
 
-    @Min(0) @Max(20)
+    @Min(0) @Max(10)
     @Column(name = "lower_anterior", nullable = false)
     private int lowerAnterior;
 
@@ -70,6 +70,11 @@ public class PARScore {
 
     @Column(name = "total_weighted", nullable = false)
     private int totalWeighted;
+
+    /** MANUAL | AUTO_LANDMARK | ML — which workflow produced this score. */
+    @Builder.Default
+    @Column(name = "score_source", nullable = false, length = 20)
+    private String scoreSource = "MANUAL";
 
     @Column(length = 60)
     private String classification;
