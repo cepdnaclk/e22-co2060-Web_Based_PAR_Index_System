@@ -26,13 +26,6 @@ VALUES
     'ADMIN',
     TRUE
   ),
-    (
-    'Admin E22036',
-    'e22036@eng.pdn.ac.lk',
-    '$2b$10$.iYcemmjWRvMtD/kIENYa.2aMLyl4zTPE5oz6NmhLlVDN46slYvjW',
-    'ADMIN',
-    TRUE
-  ),
   (
     'Admin E22035',
     'e22035@eng.pdn.ac.lk',
