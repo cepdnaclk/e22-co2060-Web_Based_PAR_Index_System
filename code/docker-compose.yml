@@ -39,6 +39,12 @@
     volumes:
       - ml_models:/app/models
       - ml_data:/app/data
+      # FIX: par-ml previously had no access to the STL files uploaded via
+      # par-backend at all — /predict-landmarks always failed with
+      # "Mesh file not found" because backend_uploads (mounted at
+      # /app/uploads by par-backend) was never shared here. Mounted
+      # read-only since par-ml only ever reads mesh files, never writes them.
+      - backend_uploads:/app/uploads:ro
 
     depends_on:
       mysql:

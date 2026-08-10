@@ -55,15 +55,23 @@ public class MlPredictionService {
     @Value("${app.ml.enabled}")
     private boolean mlEnabled;
 
-    // BUG FIX: this service never attached the shared secret, so every call
-    // to the FastAPI ml-service would be rejected once its X-ML-Service-Key
-    // check is enforced (see MLClientService, which already does this
-    // correctly for the /predict total-PAR endpoint).
-    @Value("${app.ml.secret}")
-    private String mlServiceSecret;
-
     @Value("${app.storage.base-dir}")
     private String baseDir;
+
+    // BUG FIX: this was never read here before, so callMlService()/
+    // callParEstimate() below never attached X-ML-Service-Key — every
+    // request was rejected with 403 by ml_service's verify_service_key
+    // middleware (main.py), regardless of whether ml-service was reachable.
+    @Value("${app.ml.secret:}")
+    private String mlServiceSecret;
+
+    private HttpHeaders serviceKeyHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        if (mlServiceSecret != null && !mlServiceSecret.isBlank()) {
+            headers.set("X-ML-Service-Key", mlServiceSecret);
+        }
+        return headers;
+    }
 
     @Transactional
     public LandmarkDto.PredictLandmarksResponse predictForCase(Long caseId, User performer) {
@@ -169,18 +177,19 @@ public class MlPredictionService {
         );
 
         try {
-            // BUG FIX: was "/predict", which collides with MLClientService's
-            // multipart total-PAR regressor endpoint on the same ml-service
-            // (incompatible payloads — one is multipart STL uploads, this one
-            // is a JSON mesh path). The geometric landmark detector lives at
-            // its own path, /predict-landmarks.
-            HttpHeaders headers = new HttpHeaders();
-            if (mlServiceSecret != null && !mlServiceSecret.isBlank()) {
-                headers.set("X-ML-Service-Key", mlServiceSecret);
-            }
+            // BUG FIX: was posting to "/predict", which is the total-PAR,
+            // 3-STL-file-upload endpoint used by MLClientService — an
+            // entirely different contract (multipart files in, {totalPAR}
+            // out) from what this method sends/expects (JSON {slot,
+            // meshPath} in, {points, modelVersion, confidence} out). That
+            // endpoint would reject this request's shape outright. The
+            // correct endpoint for per-slot landmark-point detection is
+            // /predict-landmarks (see ml_service/app/main.py).
+            // BUG FIX: also now attaches X-ML-Service-Key — every request
+            // was previously rejected with 403 before reaching real logic.
             return restTemplate.postForObject(
                     mlServiceUrl + "/predict-landmarks",
-                    new HttpEntity<>(body, headers),
+                    new HttpEntity<>(body, serviceKeyHeaders()),
                     LandmarkDto.PredictResponse.class);
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
             // The ML service WAS reached — it returned an error (e.g. 404
@@ -212,13 +221,11 @@ public class MlPredictionService {
         );
 
         try {
-            HttpHeaders headers = new HttpHeaders();
-            if (mlServiceSecret != null && !mlServiceSecret.isBlank()) {
-                headers.set("X-ML-Service-Key", mlServiceSecret);
-            }
+            // BUG FIX: also attach the service key here — same 403 issue as
+            // callMlService() above.
             return restTemplate.postForObject(
                     mlServiceUrl + "/predict-par",
-                    new HttpEntity<>(body, headers),
+                    new HttpEntity<>(body, serviceKeyHeaders()),
                     LandmarkDto.PredictParResponse.class);
         } catch (RestClientException e) {
             // Expected when the regressor hasn't been trained yet (HTTP 503) — not an error.

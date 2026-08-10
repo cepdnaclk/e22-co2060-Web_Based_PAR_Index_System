@@ -146,6 +146,7 @@ export const landmarkApi = {
   submit:        (caseId, data) => api.post(`/cases/${caseId}/landmarks`, data),
   get:           (caseId)       => api.get(`/cases/${caseId}/landmarks`),
   clear:         (caseId)       => api.delete(`/cases/${caseId}/landmarks`),
+  predict:       (caseId)       => api.post(`/cases/${caseId}/predict-landmarks`),
   autoCalculate: (caseId)       => api.post(`/cases/${caseId}/auto-calculate`),
 }
 

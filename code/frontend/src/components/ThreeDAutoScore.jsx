@@ -31,6 +31,7 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
   // UI state
   const [submitting,  setSubmitting]  = useState(false)
   const [calculating, setCalculating] = useState(false)
+  const [detecting,   setDetecting]   = useState(false)
   const [error,       setError]       = useState('')
   const [autoResult,  setAutoResult]  = useState(null)
 
@@ -46,10 +47,10 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
     return SLOTS.reduce((count, slot) => count + Object.keys(placedPoints[slot] ?? {}).length, 0)
   }, [placedPoints])
 
-  // Load any previously saved landmarks when the panel first opens
-  useEffect(() => {
+  // Load any previously saved landmarks (manual + ML-predicted) from backend
+  const loadLandmarks = useCallback(() => {
     if (!caseId) return
-    landmarkApi.get(caseId)
+    return landmarkApi.get(caseId)
       .then(({ data }) => {
         if (!data?.length) return
         const restored = { UPPER: {}, LOWER: {}, BUCCAL: {} }
@@ -68,6 +69,8 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
       })
       .catch(() => { /* no landmarks yet — that's fine */ })
   }, [caseId])
+
+  useEffect(() => { loadLandmarks() }, [loadLandmarks])
 
   // ── Point placement ─────────────────────────────────────────────────
   const handlePointPlaced = useCallback((name, coords) => {
@@ -119,6 +122,24 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
     } catch { /* silent — local state already cleared */ }
   }
 
+  // ── Auto-detect landmarks via ml-service (geometric point detection) ──
+  const handleAutoDetect = async () => {
+    setDetecting(true)
+    setError('')
+    try {
+      const { data } = await landmarkApi.predict(caseId)
+      await loadLandmarks()
+      setError('')
+      if (!data?.landmarksPredicted) {
+        setError('Auto-detection ran but found no points — check the uploaded models.')
+      }
+    } catch (err) {
+      setError(err.response?.data?.message ?? 'Auto point detection failed.')
+    } finally {
+      setDetecting(false)
+    }
+  }
+
   // ── Auto-calculate ──────────────────────────────────────────────────
   const handleAutoCalc = async () => {
     setCalculating(true)
@@ -163,6 +184,18 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
         <span style={{ marginLeft: 'auto', fontSize: 12, color: '#6b7280' }}>
           {totalPlaced} points placed · {Object.values(savedSlots).filter(Boolean).length}/3 slots saved
         </span>
+        <button
+          onClick={handleAutoDetect}
+          disabled={detecting || !caseId}
+          style={{
+            padding: '6px 14px', borderRadius: 7, border: 'none',
+            cursor: detecting ? 'default' : 'pointer', fontWeight: 600, fontSize: 12,
+            background: detecting ? '#c7d2fe' : '#4338ca', color: '#fff',
+          }}
+          title="Automatically detect landmark points using geometric point detection (ml-service). Review and confirm before finalising."
+        >
+          {detecting ? '🔎 Detecting…' : '🦷 Predict Landmarks (ML)'}
+        </button>
       </div>
 
       {error && (
@@ -184,39 +217,9 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
         </div>
       )}
 
-      {/* Slot selector tabs — now driven by Case3DViewer via onSlotChange */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-        {SLOTS.map(slot => (
-          <button
-            key={slot}
-            onClick={() => { setViewSlot(slot); setActive(null) }}
-            style={{
-              padding: '7px 18px', borderRadius: 7, border: 'none',
-              cursor: 'pointer', fontWeight: 600, fontSize: 13,
-              background: viewSlot === slot
-                ? (slot === 'UPPER' ? '#2563eb' : slot === 'LOWER' ? '#16a34a' : '#b45309')
-                : '#f3f4f6',
-              color:  viewSlot === slot ? '#fff' : '#374151',
-              boxShadow: viewSlot === slot ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
-              transition: 'all 0.15s',
-              position: 'relative',
-            }}
-          >
-            {slot === 'UPPER' && '🦷 Upper'}
-            {slot === 'LOWER' && '🦷 Lower'}
-            {slot === 'BUCCAL' && '📐 Buccal'}
-            {savedSlots[slot] && (
-              <span style={{
-                position: 'absolute', top: -6, right: -6,
-                width: 14, height: 14, borderRadius: '50%',
-                background: '#16a34a', color: '#fff',
-                fontSize: 9, fontWeight: 700,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>✓</span>
-            )}
-          </button>
-        ))}
-      </div>
+      {/* Slot tabs are rendered by Case3DViewer below (it also disables
+          tabs for slots with no uploaded model) — avoid rendering a
+          second, redundant tab row here. */}
 
       {/* Main layout: viewer + panel */}
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -308,11 +311,11 @@ export default function ThreeDAutoScore({ caseId, modelFiles, onScored }) {
         borderRadius: 8, fontSize: 12, color: '#78350f',
         display: 'flex', gap: 20, flexWrap: 'wrap',
       }}>
-        <span><strong>Step 1:</strong> Select landmark → click model to place</span>
+        <span><strong>Step 1:</strong> Click 🦷 Predict Landmarks (ML) — auto-detects points on all arches</span>
         <span>→</span>
-        <span><strong>Step 2:</strong> Save each arch slot (Upper, Lower, Buccal)</span>
+        <span><strong>Step 2:</strong> Click ⚡ Auto-Calculate PAR</span>
         <span>→</span>
-        <span><strong>Step 3:</strong> Click ⚡ Auto-Calculate PAR</span>
+        <span>Need to fix a point? Select it below and click the model to override manually.</span>
       </div>
     </div>
   )

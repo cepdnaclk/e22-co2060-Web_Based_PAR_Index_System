@@ -24,6 +24,7 @@ from typing import Optional
 
 from app.core.config import settings
 from app.core.model_store import ModelStore
+from app.core.landmark_detector import detect_arch_landmarks
 
 # ── Logging ────────────────────────────────────────────────────────────────
 
@@ -160,6 +161,75 @@ async def predict(
         except Exception as e:
             logger.error(f"Prediction failed: {e}")
             raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+
+
+@app.post("/predict-landmarks")
+async def predict_landmarks(request: Request):
+    """
+    Geometric landmark-point detection for one arch slot.
+
+    Called by MlPredictionService.callMlService() — request body:
+        {"slot": "UPPER" | "LOWER" | "BUCCAL", "meshPath": "<absolute path>"}
+
+    Response matches LandmarkDto.PredictResponse:
+        {"points": [{"name": "R3M", "x":.., "y":.., "z":..}, ...],
+         "modelVersion": "geometric-v1", "confidence": 0.35}
+
+    No trained landmark model exists in this project (only a total-PAR
+    regressor does — see /predict below) — points are derived
+    geometrically from the mesh surface. See landmark_detector.py for
+    the method and its limitations.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, "Request body must be valid JSON.")
+
+    slot = body.get("slot")
+    mesh_path = body.get("meshPath")
+    if not slot or slot not in ("UPPER", "LOWER", "BUCCAL"):
+        raise HTTPException(400, "slot must be one of UPPER, LOWER, BUCCAL")
+    if not mesh_path or not os.path.exists(mesh_path):
+        raise HTTPException(404, f"meshPath not found on ml-service filesystem: {mesh_path}")
+
+    try:
+        raw_points = detect_arch_landmarks(mesh_path, slot)
+    except Exception as e:
+        logger.error(f"Landmark detection failed for {mesh_path} ({slot}): {e}")
+        raise HTTPException(500, f"Landmark detection failed: {e}")
+
+    points = [
+        {"name": name, "x": x, "y": y, "z": z}
+        for name, (x, y, z) in raw_points.items()
+    ]
+
+    return {
+        "points": points,
+        "modelVersion": "geometric-v1",
+        "confidence": 0.35,
+    }
+
+
+@app.post("/predict-par")
+async def predict_par_from_two(request: Request):
+    """
+    Optional cross-check total-PAR estimate from upper+lower meshes only
+    (called by MlPredictionService.callParEstimate()). The trained
+    PARRegressor (see model_store.py) was built and trained on THREE
+    point clouds (upper, lower, buccal) — calling it with only two isn't
+    a fair substitute, so this intentionally returns 503 rather than
+    silently guessing. The Java side already treats this as a
+    best-effort, optional call and degrades gracefully (see
+    MlPredictionService.callParEstimate's catch block) — this is a
+    documented limitation, not a bug.
+    """
+    raise HTTPException(
+        503,
+        "PAR estimate from upper+lower only is not supported — the trained "
+        "model requires upper, lower, and buccal meshes together. Use the "
+        "/predict endpoint with all three files once a buccal scan is "
+        "available."
+    )
 
 
 @app.post("/train")

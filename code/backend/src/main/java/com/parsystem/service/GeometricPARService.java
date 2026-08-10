@@ -17,21 +17,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Calculates the PAR index automatically from stored 3D landmark points.
- *
- * REQUIREMENT 1 — PAR Score Calculation Integrity:
- *   - Validate ALL required landmark point names before ANY geometry
- *   - Throw ValidationException with missing point names if any absent
- *   - After calculation, validate every output is within clinical range
- *   - If ANY component is outside range: do NOT save, throw ValidationException
- *   - Log at WARNING level every auto-calculate trigger (auditable clinical trail)
- *
- * British PAR weighting:
- *   upperAnterior × 1   lowerAnterior × 1
- *   buccalLeft    × 1   buccalRight   × 1
- *   overjet       × 6   overbite      × 2   centreline × 4
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -42,17 +27,6 @@ public class GeometricPARService {
     private final PARScoreRepository      parScoreRepo;
     private final AuditService            auditService;
 
-    // REQUIREMENT 1: Minimum required landmark sets
-    //
-    // BUG FIX: R1Mid, R1Low, and LCover were missing from these lists even
-    // though calculateOverjetScore()/calculateOverbiteScore() below read them
-    // directly. A landmark set could pass validateRequiredLandmarks() while
-    // missing all three, and overjet/overbite — PAR's two highest-weighted
-    // components (x6 and x2) — would then silently compute as 0 every time,
-    // since 0 is itself a valid value in both output ranges and so was never
-    // caught by validateOutputRanges() either. The frontend's LANDMARK_DEFS
-    // (LandmarkPanel.jsx) already prompts the clinician for all three points,
-    // so this is purely a backend validation gap, not a frontend mismatch.
     private static final List<String> REQUIRED_UPPER = List.of(
             "R3M", "R3D", "R2M", "R2D", "R1M", "R1D", "R1Mid",
             "L1M", "L1D", "L2M", "L2D", "L3M", "L3D"
@@ -65,14 +39,6 @@ public class GeometricPARService {
             "RU6", "RL6", "LU6", "LL6", "LCover"
     );
 
-    // REQUIREMENT 1: Clinical output ranges
-    //
-    // BUG FIX: buccalLeft/buccalRight were capped at 5, but each buccal score
-    // is the sum of three sub-scores computed below — AnteroPosterior (0-2) +
-    // Transverse (0-4) + Vertical (0-1) — whose maximum is 7, matching the
-    // PARScore entity's own @Max(7) constraint. A genuinely severe buccal
-    // segment discrepancy (6 or 7) was being rejected here as "outside
-    // clinical range" even though it was a valid, correctly computed score.
     private static final Map<String, int[]> CLINICAL_RANGES = Map.of(
             "upperAnterior", new int[]{0, 10},
             "lowerAnterior", new int[]{0, 10},
@@ -83,8 +49,6 @@ public class GeometricPARService {
             "centreline",    new int[]{0, 2},
             "totalWeighted", new int[]{0, 100}
     );
-
-    // ── Public entry-point ─────────────────────────────────────────────────
 
     @Transactional
     public LandmarkDto.AutoScoreResponse calculateAndSave(Long caseId,
@@ -102,19 +66,15 @@ public class GeometricPARService {
 
         long count = all.size();
 
-        // Build lookup maps per slot
         Map<String, Point3d> upper  = toMap(all, LandmarkPoint.Slot.UPPER);
         Map<String, Point3d> lower  = toMap(all, LandmarkPoint.Slot.LOWER);
         Map<String, Point3d> buccal = toMap(all, LandmarkPoint.Slot.BUCCAL);
 
-        // REQUIREMENT 1: Validate ALL required landmarks before calculating
         validateRequiredLandmarks(caseId, upper, lower, buccal);
 
-        // REQUIREMENT 1: Log at WARNING level every auto-calculate trigger
         log.warn("AUTO_CALCULATE_PAR triggered: caseId={} userId={} landmarkCount={}",
                 caseId, performer.getId(), count);
 
-        // ── Calculate each component ──────────────────────────────────────
         int upperAnteriorRaw = calculateAnteriorSegmentScore(upper);
         int lowerAnteriorRaw = calculateAnteriorSegmentScore(lower);
         int overjetRaw       = calculateOverjetScore(upper, buccal);
@@ -131,7 +91,6 @@ public class GeometricPARService {
         int buccalRightRaw = buccalRightAP + buccalRightTrs + buccalRightVrt;
         int buccalLeftRaw  = buccalLeftAP  + buccalLeftTrs  + buccalLeftVrt;
 
-        // ── Apply British PAR weights ─────────────────────────────────────
         int upperAnteriorW  = upperAnteriorRaw * PARScore.W_UPPER_ANTERIOR;
         int lowerAnteriorW  = lowerAnteriorRaw * PARScore.W_LOWER_ANTERIOR;
         int overjetW        = overjetRaw       * PARScore.W_OVERJET;
@@ -144,7 +103,6 @@ public class GeometricPARService {
                           + overjetW + overbiteW + centrelineW
                           + buccalLeftW + buccalRightW;
 
-        // REQUIREMENT 1: Log WARNING with all component values (auditable trail)
         log.warn("PAR_COMPONENTS: caseId={} userId={} landmarks={} " +
                  "upperAnterior={} lowerAnterior={} buccalLeft={} buccalRight={} " +
                  "overjet={} overbite={} centreline={} totalWeighted={}",
@@ -152,13 +110,10 @@ public class GeometricPARService {
                 upperAnteriorRaw, lowerAnteriorRaw, buccalLeftRaw, buccalRightRaw,
                 overjetRaw, overbiteRaw, centrelineRaw, totalWeighted);
 
-        // REQUIREMENT 1: Validate every output is within clinical range
-        // Do NOT save — throw with component name and out-of-range value
         validateOutputRanges(caseId, performer,
                 upperAnteriorRaw, lowerAnteriorRaw, buccalLeftRaw, buccalRightRaw,
                 overjetRaw, overbiteRaw, centrelineRaw, totalWeighted);
 
-        // ── Persist into par_scores ───────────────────────────────────────
         PARScore score = parScoreRepo.findByOrthoCaseId(caseId).orElse(new PARScore());
         score.setOrthoCase(orthoCase);
         score.setUpperAnterior(upperAnteriorRaw);
@@ -172,7 +127,6 @@ public class GeometricPARService {
         score.setScoreSource("AUTO_LANDMARK");
         score.setCalculatedAt(LocalDateTime.now());
 
-        // REQUIREMENT 2: POST-treatment classification uses ONLY pre_case_id
         String classification = null;
         if (orthoCase.getStage() == OrthoCase.Stage.POST) {
             classification = classifyPostTreatment(orthoCase, totalWeighted);
@@ -207,8 +161,6 @@ public class GeometricPARService {
                 .build();
     }
 
-    // ── REQUIREMENT 1: Landmark validation ───────────────────────────────
-
     private void validateRequiredLandmarks(Long caseId,
                                            Map<String, Point3d> upper,
                                            Map<String, Point3d> lower,
@@ -232,11 +184,6 @@ public class GeometricPARService {
         }
     }
 
-    /**
-     * REQUIREMENT 1: Validate every output component is within clinical range.
-     * If ANY component is outside range: do NOT save, throw with component name and value.
-     * Audit log PAR_VALIDATION_FAILED.
-     */
     private void validateOutputRanges(Long caseId, com.parsystem.entity.User performer,
                                        int upperAnterior, int lowerAnterior,
                                        int buccalLeft, int buccalRight,
@@ -261,18 +208,15 @@ public class GeometricPARService {
             if (value < range[0] || value > range[1]) {
                 String detail = "component=" + name + " value=" + value +
                                 " expected=" + range[0] + "-" + range[1];
-                // REQUIREMENT 11: Audit log PAR_VALIDATION_FAILED
                 auditService.log(performer, "PAR_VALIDATION_FAILED", "OrthoCase", caseId, detail);
                 log.warn("PAR_VALIDATION_FAILED: caseId={} {}", caseId, detail);
                 throw new IllegalArgumentException(
                         "PAR component '" + name + "' value " + value +
                         " is outside clinical range [" + range[0] + ", " + range[1] + "]. " +
-                        "Score not saved — please re-check landmark placement.");
+                        "Score not saved â€” please re-check landmark placement.");
             }
         }
     }
-
-    // ── Geometric calculation methods ──────────────────────────────────────
 
     private int calculateAnteriorSegmentScore(Map<String, Point3d> pts) {
         String[][] pairs = {
@@ -290,7 +234,7 @@ public class GeometricPARService {
                 total += distanceScore(p1.distance(p2));
             }
         }
-        return total;
+        return Math.min(total, 9);
     }
 
     private int calculateOverjetScore(Map<String, Point3d> upper, Map<String, Point3d> buccal) {
@@ -387,49 +331,6 @@ public class GeometricPARService {
         return 2;
     }
 
-    /**
-     * British PAR transverse buccal occlusion scoring (Richmond et al. 1992):
-     *   0 = no crossbite
-     *   1 = crossbite tendency
-     *   2 = single tooth in crossbite
-     *   3 = more than one tooth in crossbite
-     *   4 = more than one tooth in scissor bite
-     * Crossbite and scissor bite are opposite-direction displacements from
-     * the same neutral zone, not two ends of one linear scale: crossbite is
-     * the lower buccal cusp sitting BUCCAL/lateral to the upper buccal cusp;
-     * scissor bite is the lower buccal cusp sitting LINGUAL/medial to the
-     * upper lingual cusp — the opposite direction, past the upper arch
-     * entirely. (See StatPearls "Posterior Crossbite" for this definition.)
-     *
-     * BUG FIX: the previous version tested the score-2 (crossbite) and
-     * score-1 (tendency) thresholds on OPPOSITE sides of the midline for the
-     * same side parameter — e.g. for "R" it checked l6MB.x > upperBound for
-     * score 2, but l6MB.x <= lowerBound for score 1. Those two conditions
-     * can't both describe displacement in the same direction, so depending
-     * on where the tooth actually sat, the method could report "tendency"
-     * when the tooth had moved further than the "single tooth in crossbite"
-     * threshold on the other side, or vice versa. This version always
-     * resolves "outward" (away from the midline, the crossbite direction)
-     * the same way for both sides, using a coordinate convention where
-     * increasing x = toward the patient's right (same convention already
-     * used in calculateCentrelineScore above): outward is +x for the right
-     * side and -x for the left side.
-     *
-     * KNOWN LIMITATION (flagged, not invented around): score 3
-     * ("> 1 tooth in crossbite") is still unreachable from this method,
-     * because it only has cusp positions for the first molar. The clinical
-     * criterion is a per-tooth qualitative count across the whole buccal
-     * segment (canine to last molar present), which this landmark set
-     * doesn't capture — extending it correctly would need crossbite
-     * detection on every tooth in the segment, not just R6MB/L6MB. Until
-     * that exists, this method can only express a 4-level result
-     * (0, 1, 2, 4) and cannot distinguish "single tooth" from "more than
-     * one tooth" in crossbite. The scissor-bite threshold (l6GB ± d) is
-     * carried over unchanged from the original implementation — it wasn't
-     * part of the directional bug, and there's no clinical source in hand
-     * specifying where exactly "tendency toward scissor bite" should end
-     * and "scissor bite" should begin, so it isn't re-derived here.
-     */
     private int calculateBuccalTransverse(Map<String, Point3d> upper,
                                           Map<String, Point3d> lower,
                                           String side) {
@@ -453,21 +354,16 @@ public class GeometricPARService {
         double upperBound = upperMidX + (3 * d);
 
         boolean isRightSide = "R".equals(side);
-        // outBound = the boundary on the crossbite (outward) side of the
-        // neutral zone. For the right side, "outward" is +x, so outBound is
-        // the upper bound; for the left side, "outward" is -x, so outBound
-        // is the lower bound. This mirrors correctly instead of mixing bounds.
         double outBound = isRightSide ? upperBound : lowerBound;
 
-        if (l6MB.x >= lowerBound && l6MB.x <= upperBound) return 0; // neutral zone
+        if (l6MB.x >= lowerBound && l6MB.x <= upperBound) return 0;
 
         boolean displacedOutward = isRightSide ? (l6MB.x > outBound) : (l6MB.x < outBound);
         if (displacedOutward) {
             double outwardDistance = Math.abs(l6MB.x - outBound);
-            return (outwardDistance <= d) ? 1 : 2; // tendency, then single-tooth crossbite
+            return (outwardDistance <= d) ? 1 : 2;
         }
 
-        // Otherwise displaced inward, past the opposing lingual cusp territory
         double scissorLimit = isRightSide ? (l6GB.x - d) : (l6GB.x + d);
         boolean pastScissorLimit = isRightSide ? (l6MB.x < scissorLimit) : (l6MB.x > scissorLimit);
         return pastScissorLimit ? 4 : 1;
@@ -509,8 +405,6 @@ public class GeometricPARService {
         return (openBiteCount >= 2) ? 1 : 0;
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────
-
     private int distanceScore(double dist) {
         if (dist <= 1.0) return 0;
         if (dist <= 2.0) return 1;
@@ -529,23 +423,16 @@ public class GeometricPARService {
                   ));
     }
 
-    /**
-     * REQUIREMENT 2: PAR classification ONLY uses the explicitly linked PRE case
-     * via pre_case_id — NEVER uses "find any PRE case for this patient".
-     * Throws IllegalStateException if preCase.parScore is null.
-     */
     private String classifyPostTreatment(OrthoCase postCase, int postScore) {
-        // REQUIREMENT 2: Use explicitly linked preCase via pre_case_id only
         OrthoCase preCase = postCase.getPreCase();
 
         if (preCase == null) {
-            log.warn("POST case {} has no pre_case_id linked — classification unavailable", postCase.getId());
+            log.warn("POST case {} has no pre_case_id linked â€” classification unavailable", postCase.getId());
             return "No Pre-Treatment Reference";
         }
 
         PARScore preParScore = preCase.getParScore();
 
-        // REQUIREMENT 2: Throw if preCase.parScore is null — do not classify with missing baseline
         if (preParScore == null) {
             throw new IllegalStateException(
                     "PRE case #" + preCase.getId() + " has no PAR score recorded. " +
@@ -563,3 +450,4 @@ public class GeometricPARService {
         return "No Different or Worse";
     }
 }
+

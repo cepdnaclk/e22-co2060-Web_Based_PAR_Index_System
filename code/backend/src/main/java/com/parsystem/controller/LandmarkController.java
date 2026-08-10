@@ -4,6 +4,7 @@ import com.parsystem.dto.LandmarkDto;
 import com.parsystem.entity.User;
 import com.parsystem.service.GeometricPARService;
 import com.parsystem.service.LandmarkService;
+import com.parsystem.service.MlPredictionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ import java.util.Map;
  *   POST   /api/v1/cases/{id}/landmarks         — save points for one slot
  *   GET    /api/v1/cases/{id}/landmarks         — retrieve all stored landmarks
  *   DELETE /api/v1/cases/{id}/landmarks         — clear all landmarks
+ *   POST   /api/v1/cases/{id}/predict-landmarks — auto-detect points via ml-service
  *   POST   /api/v1/cases/{id}/auto-calculate    — run geometric PAR & save result
  */
 @RestController
@@ -31,8 +33,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class LandmarkController {
 
-    private final LandmarkService    landmarkService;
+    private final LandmarkService     landmarkService;
     private final GeometricPARService geometricPARService;
+    private final MlPredictionService mlPredictionService;
 
     // ── POST /landmarks ──────────────────────────────────────────────────
 
@@ -91,6 +94,28 @@ public class LandmarkController {
 
         landmarkService.clearPoints(id, user);
         return ResponseEntity.ok(Map.of("message", "All landmarks cleared."));
+    }
+
+    // ── POST /predict-landmarks ──────────────────────────────────────────
+
+    /**
+     * Auto-detect 3D landmark points for every uploaded model in this case,
+     * using the geometric point-detection algorithm in ml-service.
+     *
+     * Results are saved as ML_PREDICTED, UNCONFIRMED LandmarkPoint rows —
+     * they never overwrite clinician-confirmed MANUAL points, and
+     * auto-calculate ignores unconfirmed predictions until a clinician
+     * reviews and confirms them (via the normal /landmarks submit flow).
+     */
+    @PostMapping("/predict-landmarks")
+    @PreAuthorize("hasAnyRole('ORTHODONTIST','ADMIN')")
+    public ResponseEntity<LandmarkDto.PredictLandmarksResponse> predictLandmarks(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+
+        LandmarkDto.PredictLandmarksResponse result =
+                mlPredictionService.predictForCase(id, user);
+        return ResponseEntity.ok(result);
     }
 
     // ── POST /auto-calculate ─────────────────────────────────────────────
