@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Automated PAR Index Calculation System — University of Peradeniya</title>
+<meta name="description" content="A web-based clinical system that automates Peer Assessment Rating (PAR) Index calculation from 3D dental models using orthodontic landmark detection and geometric analysis. CO2060 project, Department of Computer Engineering, University of Peradeniya.">
+<meta property="og:title" content="Automated PAR Index Calculation System">
+<meta property="og:description" content="Automating orthodontic PAR scoring from 3D dental scans — landmark detection, geometric measurement, and clinical case management.">
+<meta property="og:image" content="assets/images/gallery/overview-graphic.jpg">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%2335d0dd%22/><circle cx=%2216%22 cy=%2216%22 r=%224%22 fill=%22%230b1220%22/></svg>">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<nav class="navbar" aria-label="Primary">
+  <div class="nav-inner">
+    <a href="#home" class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3c-3 0-5 2-5 5 0 4 2 6 2 9a3 3 0 0 0 6 0c0-3 2-5 2-9 0-3-2-5-5-5z" stroke="#0b1220" stroke-width="1.6"/></svg>
+      </span>
+      <span>PAR&nbsp;Index&nbsp;System</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#home">Home</a></li>
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#solution">Solution</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#interface">Interface</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#ml">AI / ML</a></li>
+      <li><a href="#par-index">PAR Index</a></li>
+      <li><a href="#software">Software</a></li>
+      <li><a href="#testing">Testing</a></li>
+      <li><a href="#team">Team</a></li>
+      <li><a href="#gallery">Gallery</a></li>
+      <li><a href="#resources">Resources</a></li>
+    </ul>
+
+    <div class="nav-cta">
+      <a class="btn btn-ghost btn-sm" href="https://github.com/cepdnaclk/e22-co2060-Web_Based_PAR_Index_System" target="_blank" rel="noopener">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.5 7.5 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span class="long">GitHub</span>
+      </a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="mobile-menu" aria-label="Mobile navigation">
+  <a href="#home">Home</a>
+  <a href="#problem">Problem</a>
+  <a href="#solution">Solution</a>
+  <a href="#features">Features</a>
+  <a href="#interface">Interface</a>
+  <a href="#architecture">Architecture</a>
+  <a href="#ml">AI / ML</a>
+  <a href="#par-index">PAR Index</a>
+  <a href="#software">Software</a>
+  <a href="#testing">Testing</a>
+  <a href="#team">Team</a>
+  <a href="#gallery">Gallery</a>
+  <a href="#resources">Resources</a>
+</div>
+
+<main id="main">
+
+  <!-- ============================= HERO ============================= -->
+  <section id="home" class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow">3rd Year Project · CO2060 · Dept. of Computer Engineering, University of Peradeniya</div>
+        <h1>Automated <span class="accent">PAR Index</span> Calculation from 3D Dental Models</h1>
+        <p class="hero-sub">
+          A web-based clinical system that digitises orthodontic PAR (Peer Assessment Rating) scoring —
+          replacing manual, cast-based measurement with 3D model upload, landmark detection,
+          and automated geometric calculation of the weighted PAR score.
+        </p>
+        <div class="hero-cta">
+          <a href="#solution" class="btn btn-primary">Explore the System</a>
+          <a href="#architecture" class="btn btn-ghost">View Architecture</a>
+          <a href="https://github.com/cepdnaclk/e22-co2060-Web_Based_PAR_Index_System" target="_blank" rel="noopener" class="btn btn-ghost">GitHub Repository</a>
+        </div>
+        <div class="hero-meta">
+          <span><b>Stack</b> · React · Spring&nbsp;Boot · FastAPI · MySQL</span>
+          <span><b>Formats</b> · STL / PLY / OBJ</span>
+          <span><b>Roles</b> · Admin · Orthodontist · Undergraduate</span>
+        </div>
+      </div>
+      <!--
+        FUTURE PHOTO — Hero / project overview image
+        Folder: assets/images/hero/
+        Currently showing the project's concept graphic. To swap in an
+        actual product screenshot or 3D visualization later, just change
+        the src below (keep the same dimensions ~4:3 for best fit).
+      -->
+      <div class="hero-visual reveal">
+        <img src="assets/images/hero/hero-banner.jpg" alt="System overview graphic: a wireframe dental arch mesh with PAR component readouts (overjet, overbite) and the project's technology stack" loading="eager">
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= STATS ============================= -->
+  <section class="stats">
+    <div class="container stats-grid">
+      <div class="reveal">
+        <div class="stat-num"><span data-count="3">0</span></div>
+        <div class="stat-label">Core Services — Frontend, Backend, ML Service</div>
+      </div>
+      <div class="reveal">
+        <div class="stat-num"><span data-count="7">0</span></div>
+        <div class="stat-label">Weighted PAR Components Scored</div>
+      </div>
+      <div class="reveal">
+        <div class="stat-num"><span data-count="3">0</span></div>
+        <div class="stat-label">Role-Based User Types</div>
+      </div>
+      <div class="reveal">
+        <div class="stat-num"><span data-count="3">0</span><span class="unit">/case</span></div>
+        <div class="stat-label">3D Scan Slots — Upper, Lower, Buccal</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= PROBLEM ============================= -->
+  <section id="problem" class="section">
+    <div class="landmark-field" aria-hidden="true"></div>
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="eyebrow">The Problem</div>
+        <h2>Manual PAR scoring doesn't scale</h2>
+        <p>The PAR Index is the clinical standard for measuring malocclusion severity and treatment outcome, but the way it's actually produced in practice hasn't changed much.</p>
+      </div>
+
+      <ul class="pill-list problem reveal">
+        <li>
+          <span class="dot">✕</span>
+          <div>
+            <b>Manual, cast-based measurement.</b>
+            <span class="desc">Clinicians traditionally measure PAR components by hand from physical or scanned dental casts using a ruler and a PAR gauge.</span>
+          </div>
+        </li>
+        <li>
+          <span class="dot">✕</span>
+          <div>
+            <b>Slow, repetitive process.</b>
+            <span class="desc">Seven components — upper/lower anterior, buccal occlusion, overjet, overbite, and centreline — must each be measured and recorded separately per case.</span>
+          </div>
+        </li>
+        <li>
+          <span class="dot">✕</span>
+          <div>
+            <b>Dependent on a trained clinician.</b>
+            <span class="desc">Consistent scoring assumes the assessor is calibrated to the British Standard PAR system — capacity that is not always available at scale.</span>
+          </div>
+        </li>
+        <li>
+          <span class="dot">✕</span>
+          <div>
+            <b>Inter-observer variability.</b>
+            <span class="desc">Manual measurement naturally varies between different clinicians scoring the same case, which is a well-known limitation of hand-scored PAR.</span>
+          </div>
+        </li>
+        <li>
+          <span class="dot">✕</span>
+          <div>
+            <b>3D scan data goes underused.</b>
+            <span class="desc">Practices increasingly capture intraoral 3D scans, but that geometric data isn't routinely used to automate the scoring it could support.</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============================= SOLUTION ============================= -->
+  <section id="solution" class="section">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="eyebrow">Our Solution</div>
+        <h2>From 3D scan to PAR score, digitally</h2>
+        <p>The system takes the same clinical inputs orthodontists already work with — upper, lower, and buccal 3D scans — and automates the scoring pipeline around them, while keeping the clinician in control of every landmark it proposes.</p>
+      </div>
+
+      <div class="split">
+        <ul class="pill-list solution reveal">
+          <li>
+            <span class="dot">✓</span>
+            <div>
+              <b>Digital 3D model upload.</b>
+              <span class="desc">Orthodontists upload upper, lower, and buccal STL scans directly into a patient's case — no physical cast handling.</span>
+            </div>
+          </li>
+          <li>
+            <span class="dot">✓</span>
+            <div>
+              <b>ML-assisted landmark proposal.</b>
+              <span class="desc">A geometric detection service analyses each mesh and proposes clinical landmark points automatically as a starting point.</span>
+            </div>
+          </li>
+          <li>
+            <span class="dot">✓</span>
+            <div>
+              <b>Clinician review & confirmation.</b>
+              <span class="desc">The orthodontist reviews and adjusts proposed landmarks in an interactive 3D viewer before anything is scored — the clinician always has the final say.</span>
+            </div>
+          </li>
+          <li>
+            <span class="dot">✓</span>
+            <div>
+              <b>Automated, weighted PAR calculation.</b>
+              <span class="desc">Once landmarks are confirmed, the system computes the full weighted PAR total using the British Standard weighting — consistently, every time.</span>
+            </div>
+          </li>
+          <li>
+            <span class="dot">✓</span>
+            <div>
+              <b>Optional independent ML cross-check.</b>
+              <span class="desc">A separately trained regression model can estimate a total PAR score directly from the mesh geometry, as an advisory second opinion — never a replacement for the confirmed score.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div class="card reveal" style="align-self: stretch;">
+          <div class="card-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="9"/></svg>
+          </div>
+          <h3>Conceptual flow</h3>
+          <div class="workflow" style="margin-top:18px;">
+            <div class="workflow-step">
+              <div class="workflow-num">1</div>
+              <div class="workflow-body"><h4>3D Dental Model</h4><p>Upper / lower / buccal STL upload</p></div>
+            </div>
+            <div class="workflow-step">
+              <div class="workflow-num">2</div>
+              <div class="workflow-body"><h4>Landmark Detection</h4><p>Geometric proposal by the ML service</p></div>
+            </div>
+            <div class="workflow-step">
+              <div class="workflow-num">3</div>
+              <div class="workflow-body"><h4>Clinical Review</h4><p>Orthodontist confirms landmark points</p></div>
+            </div>
+            <div class="workflow-step">
+              <div class="workflow-num">4</div>
+              <div class="workflow-body"><h4>PAR Scoring</h4><p>Weighted score computed &amp; stored</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= FEATURES ============================= -->
+  <section id="features" class="section">
+    <div class="landmark-field" aria-hidden="true"></div>
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="eyebrow">Key Features</div>
+        <h2>What the system actually does</h2>
+        <p>Every feature below is implemented in the codebase — nothing here is aspirational.</p>
+      </div>
+
+      <div class="grid grid-3 reveal">
+        <div class="card">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 20h10M9 14l2 2 4-4"/></svg></div>
+          <h3>Automated PAR Calculation</h3>
+          <p>Computes the full weighted PAR total from confirmed clinical landmarks — upper/lower anterior, buccal occlusion, overjet, overbite, and centreline.</p>
+        </div>
+        <div class="card accent-violet">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.27 6.96 12 12l8.73-5.04M12 22.08V12"/></svg></div>
+          <h3>3D Dental Model Processing</h3>
+          <p>Accepts STL mesh uploads per case, rendered and manipulated in an interactive Three.js-based 3D viewer in the browser.</p>
+        </div>
+        <div class="card accent-coral">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><path d="M12 9V6.5M9.5 10.5 6.5 7.5M14.5 10.5l3-3M12 15v2.5M9.5 13.5l-3 3"/></svg></div>
+          <h3>Orthodontic Landmark Detection</h3>
+          <p>A geometric mesh-analysis service proposes landmark points per arch, which the clinician reviews and confirms before scoring.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <h3>Patient & Case Management</h3>
+          <p>Create and search patient records; manage <code>PRE</code>/<code>POST</code> treatment cases that can be paired to track progress across treatment.</p>
+        </div>
+        <div class="card accent-green">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg></div>
+          <h3>Authentication & Authorization</h3>
+          <p>Stateless JWT authentication with BCrypt password hashing, enforced by role-based access control on every endpoint.</p>
+        </div>
+        <div class="card accent-amber">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg></div>
+          <h3>Training Dataset Support</h3>
+          <p>Undergraduate users submit anonymised scan sets with a ground-truth PAR score; orthodontists review and approve them for ML retraining.</p>
+        </div>
+        <div class="card accent-violet">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg></div>
+          <h3>ML Cross-Check & Audit Trail</h3>
+          <p>An advisory total-PAR estimate from a trained regression model, with every calculation, prediction, and finalize action written to an audit log.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
+          <h3>Administrative Functions</h3>
+          <p>Admin-only user management, audit log review, ML model metrics, versioned training runs, and rollback control.</p>
+        </div>
+        <div class="card accent-coral">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+          <h3>Case Finalization</h3>
+          <p>Orthodontists lock a case once scoring is complete; only an administrator can reopen a finalized case.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= SYSTEM INTERFACE ============================= -->
+  <!--
+    FUTURE PHOTOS — System Interface screenshots
+    Folder: assets/images/screenshots/
+    To add a real screenshot: drop the file in that folder, then inside the
+    matching .media-card below, replace the <div class="media-placeholder">…</div>
+    block with:
+      <img src="assets/images/screenshots/YOUR-FILE.jpg" alt="Describe the screen" loading="lazy">
+    Suggested filenames: login.jpg, dashboard.jpg, patient-management.jpg,
+    model-viewer.jpg, landmark-detection.jpg, par-calculation.jpg, results.jpg
+  -->
+  <section id="interface" class="section">
+    <div class="landmark-field" aria-hidden="true"></div>
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="eyebrow">System Interface</div>
+        <h2>What the application looks like</h2>
+        <p>Screenshots are being prepared — each card below is reserved for a specific screen and will be filled in as they're captured.</p>
+      </div>
+
+      <div class="grid grid-3 reveal">
+
+        <div class="media-card">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>
+              <span class="ph-label">Login Page</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Login Page</b>JWT-authenticated sign-in screen</div>
+        </div>
+
+        <div class="media-card">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+              <span class="ph-label">Dashboard</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Dashboard</b>Case overview for the signed-in user</div>
+        </div>
+
+        <div class="media-card">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span class="ph-label">Patient Management</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Patient Management</b>Patient records &amp; case search</div>
+        </div>
+
+        <div class="media-card">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg>
+              <span class="ph-label">3D Model Viewer</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>3D Model Viewer</b>Three.js STL viewer for an uploaded arch</div>
+        </div>
+
+        <div class="media-card">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/></svg>
+              <span class="ph-label">Landmark Detection</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Landmark Detection</b>Proposed landmarks under clinician review</div>
+        </div>
+
+        <div class="media-card">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 20h10M9 14l2 2 4-4"/></svg>
+              <span class="ph-label">PAR Calculation</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>PAR Calculation</b>Weighted score breakdown by component</div>
+        </div>
+
+        <div class="media-card">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-4 4"/></svg>
+              <span class="ph-label">Results Page</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Results Page</b>Final PAR score &amp; case summary</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= ARCHITECTURE ============================= -->
+  <section id="architecture" class="section">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="eyebrow">System Architecture</div>
+        <h2>Three services, one clinical record</h2>
+        <p>The browser never talks to the ML service directly — every ML call is proxied and authorised through the Spring Boot backend, which owns all clinical data.</p>
+      </div>
+
+      <div class="arch-diagram reveal">
+        <div class="arch-row">
+          <div class="arch-box">
+            <div class="arch-icon">🧑‍⚕️</div>
+            <b>Orthodontist / Admin / Undergraduate</b>
+            <small>Browser</small>
+          </div>
+        </div>
+        <div class="arch-connector"><svg width="20" height="24" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 0v20M4 14l6 6 6-6"/></svg></div>
+        <div class="arch-row">
+          <div class="arch-box highlight">
+            <div class="arch-icon">🖥️</div>
+            <b>React SPA</b>
+            <small>Vite dev server · :5173</small>
+          </div>
+        </div>
+        <div class="arch-connector"><svg width="20" height="24" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 0v20M4 14l6 6 6-6"/></svg></div>
+        <div class="arch-row">
+          <div class="arch-box highlight">
+            <div class="arch-icon">☕</div>
+            <b>Spring Boot API</b>
+            <small>par-backend · :8081</small>
+          </div>
+        </div>
+        <div class="arch-connector"><svg width="20" height="24" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 0v20M4 14l6 6 6-6"/></svg></div>
+        <div class="arch-row">
+          <div class="arch-box">
+            <div class="arch-icon">🗄️</div>
+            <b>MySQL 8</b>
+            <small>par-mysql · :3307→3306</small>
+          </div>
+          <div class="arch-box">
+            <div class="arch-icon">🧠</div>
+            <b>FastAPI ML Service</b>
+            <small>par-ml · :8000</small>
+          </div>
+          <div class="arch-box">
+            <div class="arch-icon">📁</div>
+            <b>Shared Upload Volume</b>
+            <small>backend_uploads (read-only to ML)</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout reveal" style="margin-top:24px;">
+        <b>Service-to-service auth.</b> Every backend → ML request carries a shared <code>X-ML-Service-Key</code> header, validated by FastAPI middleware — the ML service is never reachable directly from the browser.
+      </div>
+
+      <!--
+        FUTURE PHOTOS — Architecture exports
+        Folder: assets/images/architecture/
+        Replace the placeholder below with, e.g.:
+          <img src="assets/images/architecture/system-architecture.png" alt="Exported system architecture diagram" loading="lazy">
+      -->
+      <div class="media-card reveal" style="margin-top:24px; max-width:420px;">
+        <div class="media-frame" style="aspect-ratio:16/9;">
+          <div class="media-placeholder">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            <span class="ph-label">Exported Diagram (PNG/PDF)</span>
+            <span class="ph-tag">Optional</span>
+          </div>
+        </div>
+        <div class="media-caption"><b>Exported Architecture Diagram</b>A static export of the live diagram above, if one is produced separately</div>
+      </div>
+
+      <div class="grid grid-3 reveal" style="margin-top: 40px;">
+        <div class="card">
+          <h3>Frontend responsibilities</h3>
+          <ul>
+            <li>3D model upload &amp; viewing (Three.js)</li>
+            <li>Landmark review &amp; confirmation UI</li>
+            <li>Case, patient &amp; results dashboards</li>
+            <li>JWT-authenticated API calls</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Backend responsibilities</h3>
+          <ul>
+            <li>Authentication &amp; role authorization</li>
+            <li>Patient / case / file persistence</li>
+            <li>PAR calculation logic</li>
+            <li>Proxying &amp; securing ML requests</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>ML service responsibilities</h3>
+          <ul>
+            <li>Geometric landmark detection</li>
+            <li>Trained PAR regression inference</li>
+            <li>Model training &amp; version rollback</li>
+            <li>Dataset preprocessing for retraining</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= AI / ML ============================= -->
+  <section id="ml" class="section">
+    <div class="landmark-field" aria-hidden="true"></div>
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="eyebrow">AI / ML</div>
+        <h2>Two distinct capabilities — kept clearly separate</h2>
+        <p>It matters clinically which parts of a score are geometric measurement and which are model prediction. The system is explicit about this at every step.</p>
+      </div>
+
+      <div class="grid grid-2 reveal">
+        <div class="card">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><path d="M12 9V6.5M9.5 10.5 6.5 7.5M14.5 10.5l3-3M12 15v2.5M9.5 13.5l-3 3"/></svg></div>
+          <h3>1 · Geometric Landmark Detection</h3>
+          <p>A rule-based, geometric method — surface curvature and mesh analysis (via <code>trimesh</code> / <code>networkx</code>) — not a trained neural network. It proposes a starting set of landmark points per arch. Every point must still be reviewed and confirmed by the orthodontist before it can influence a score.</p>
+        </div>
+        <div class="card accent-violet">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h.01M15 9h.01M9 15c.83.67 1.83 1 3 1s2.17-.33 3-1"/></svg></div>
+          <h3>2 · PAR Regression Model</h3>
+          <p>A PyTorch (CPU) regression model, trained on approved training-set submissions, predicts an independent total PAR score directly from mesh geometry — with a confidence value. It is advisory only and never substitutes for the clinician-confirmed geometric score.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-3 reveal" style="margin-top: 28px;">
+        <div class="card">
+          <h3>Input</h3>
+          <p>Upper, lower, and buccal STL meshes uploaded to a case (three files for a full <code>/predict</code> call; a single slot for landmark proposal).</p>
+        </div>
+        <div class="card">
+          <h3>Processing</h3>
+          <p>FastAPI service (<code>par-ml</code>) reads mesh files from a shared, read-only Docker volume — no re-upload required — and runs geometric or model inference.</p>
+        </div>
+        <div class="card">
+          <h3>Output</h3>
+          <p>Proposed landmark coordinates, or a predicted total PAR score with confidence — both stored with a <code>score_source</code> so their origin is always traceable.</p>
+        </div>
+      </div>
+
+      <div class="callout reveal" style="margin-top: 28px;">
+        <b>Retraining pipeline.</b> Undergraduate-submitted training sets are reviewed and approved by an orthodontist, then a preprocessing script builds the tensor dataset an admin uses to trigger a new training run — with the previous model version automatically backed up for rollback.
+      </div>
+
+      <!--
+        FUTURE PHOTOS — AI / ML visualizations
+        Folder: assets/images/ml/
+        Suggested filenames: input-model.jpg, detected-landmarks.jpg,
+        ml-pipeline.jpg, prediction-result.jpg
+        Replace each .media-placeholder block with an <img> tag as shown
+        in the System Interface section's comment above.
+      -->
+      <div class="section-head reveal" style="margin-top:56px; margin-bottom:28px;">
+        <h3 style="color:#fff;font-size:20px;">Landmark &amp; prediction visualizations</h3>
+        <p style="font-size:14.5px;">Reserved for visual output from the detection and prediction pipeline as it becomes available.</p>
+      </div>
+      <div class="grid grid-4 reveal">
+        <div class="media-card">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg>
+              <span class="ph-label">Input 3D Model</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Input 3D Model</b>Raw uploaded mesh before processing</div>
+        </div>
+        <div class="media-card">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/></svg>
+              <span class="ph-label">Detected Landmarks</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Detected Landmarks</b>Geometric proposal overlaid on the mesh</div>
+        </div>
+        <div class="media-card">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              <span class="ph-label">ML Pipeline</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>ML Pipeline</b>Preprocessing → inference → postprocessing overview</div>
+        </div>
+        <div class="media-card">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
+              <span class="ph-label">Prediction Result</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Prediction Result</b>Predicted total PAR with confidence value</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= PAR INDEX ============================= -->
+  <section id="par-index" class="section">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="eyebrow">PAR Index Calculation</div>
+        <h2>The British Standard weighted PAR index</h2>
+        <p>The system implements the standard weighted PAR components. The weighted total is calculated only from confirmed clinical landmarks.</p>
+      </div>
+
+      <div class="split reveal">
+        <table class="par-table">
+          <thead>
+            <tr><th>Component</th><th>Weight</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Upper anterior</td><td class="weight">×1</td></tr>
+            <tr><td>Lower anterior</td><td class="weight">×1</td></tr>
+            <tr><td>Buccal occlusion — left</td><td class="weight">×1</td></tr>
+            <tr><td>Buccal occlusion — right</td><td class="weight">×1</td></tr>
+            <tr><td>Overjet</td><td class="weight">×6</td></tr>
+            <tr><td>Overbite</td><td class="weight">×2</td></tr>
+            <tr><td>Centreline</td><td class="weight">×4</td></tr>
+            <tr class="total"><td>Total Weighted PAR Score</td><td class="weight">Σ (component × weight)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="card">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="9"/></svg></div>
+          <h3>How a score is produced</h3>
+          <ul>
+            <li>Landmark points are placed (or ML-proposed then confirmed) on the uploaded meshes</li>
+            <li>Each of the seven components is measured geometrically from confirmed landmarks</li>
+            <li>Each raw component value is multiplied by its fixed weight</li>
+            <li>The weighted total is stored against the case with a <code>score_source</code> — <code>MANUAL</code>, <code>AUTO_LANDMARK</code>, or <code>ML</code></li>
+          </ul>
+          <p style="margin-top:14px;">Unconfirmed, ML-proposed landmarks can never contribute to a stored clinical score.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= 3D MODEL PROCESSING ============================= -->
+  <section class="section">
+    <div class="landmark-field" aria-hidden="true"></div>
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="eyebrow">3D Model Processing</div>
+        <h2>From mesh upload to landmark-ready viewer</h2>
+        <p>Confirmed supported format: <strong>STL</strong>. Each case holds three model slots.</p>
+      </div>
+
+      <div class="workflow reveal">
+        <div class="workflow-step">
+          <div class="workflow-num">01</div>
+          <div class="workflow-body">
+            <h4>Upload</h4>
+            <p>The orthodontist uploads an STL mesh for the upper arch, lower arch, and buccal (bite) view.</p>
+            <span class="workflow-tag">POST /cases/&#123;id&#125;/models</span>
+          </div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-num">02</div>
+          <div class="workflow-body">
+            <h4>Storage &amp; checksum</h4>
+            <p>The backend stores the file and its checksum, and can verify mesh integrity on demand.</p>
+            <span class="workflow-tag">GET /cases/&#123;id&#125;/models/&#123;slot&#125;/verify</span>
+          </div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-num">03</div>
+          <div class="workflow-body">
+            <h4>Interactive 3D viewing</h4>
+            <p>The mesh renders in-browser using a Three.js-based viewer, allowing the clinician to rotate, inspect, and place or adjust landmark points.</p>
+          </div>
+        </div>
+        <div class="workflow-step">
+          <div class="workflow-num">04</div>
+          <div class="workflow-body">
+            <h4>ML-assisted proposal</h4>
+            <p>The backend reads the same file from a shared volume and requests a geometric landmark proposal from the ML service.</p>
+            <span class="workflow-tag">POST /cases/&#123;id&#125;/predict-landmarks</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= SOFTWARE (STACK + ROLES + SECURITY) ============================= -->
+  <section id="software" class="section">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="eyebrow">Software</div>
+        <h2>Technology stack</h2>
+        <p>Every technology below is a direct dependency in the repository's build files.</p>
+      </div>
+
+      <div class="grid grid-4 reveal" style="margin-bottom: 48px;">
+        <div class="stack-group">
+          <h4>Frontend</h4>
+          <div class="stack-chips">
+            <span class="chip">React 19</span>
+            <span class="chip">Vite</span>
+            <span class="chip">React Router 7</span>
+            <span class="chip">Three.js</span>
+            <span class="chip">Recharts</span>
+            <span class="chip">Axios</span>
+          </div>
+        </div>
+        <div class="stack-group">
+          <h4>Backend</h4>
+          <div class="stack-chips">
+            <span class="chip">Spring Boot 3</span>
+            <span class="chip">Spring Security</span>
+            <span class="chip">Spring Data JPA</span>
+            <span class="chip">Flyway</span>
+            <span class="chip">JWT (jjwt)</span>
+          </div>
+        </div>
+        <div class="stack-group">
+          <h4>ML Service</h4>
+          <div class="stack-chips">
+            <span class="chip">Python 3.11</span>
+            <span class="chip">FastAPI</span>
+            <span class="chip">Uvicorn</span>
+            <span class="chip">PyTorch (CPU)</span>
+            <span class="chip">trimesh</span>
+            <span class="chip">NetworkX</span>
+          </div>
+        </div>
+        <div class="stack-group">
+          <h4>Data &amp; Infra</h4>
+          <div class="stack-chips">
+            <span class="chip">MySQL 8.0</span>
+            <span class="chip">Docker Compose</span>
+            <span class="chip">springdoc-openapi</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-head reveal">
+        <div class="eyebrow" id="roles">User Roles</div>
+        <h2>Three roles, clearly scoped permissions</h2>
+      </div>
+
+      <div class="grid grid-3 reveal" style="margin-bottom: 48px;">
+        <div class="card">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 3 7v6c0 5 3.8 8.7 9 9 5.2-.3 9-4 9-9V7l-9-5Z"/></svg></div>
+          <h3>Administrator</h3>
+          <ul>
+            <li>Full user management &amp; audit log review</li>
+            <li>ML training control &amp; version rollback</li>
+            <li>Unfinalize a locked case</li>
+            <li>Pre-seeded only — cannot self-register</li>
+          </ul>
+        </div>
+        <div class="card accent-green">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21c4.97-3 8-6.5 8-11a8 8 0 1 0-16 0c0 4.5 3.03 8 8 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></div>
+          <h3>Orthodontist</h3>
+          <ul>
+            <li>Create &amp; manage patients and cases</li>
+            <li>Upload 3D models, review &amp; confirm landmarks</li>
+            <li>Calculate &amp; finalize PAR scores</li>
+            <li>Review undergraduate training submissions</li>
+          </ul>
+        </div>
+        <div class="card accent-amber">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/></svg></div>
+          <h3>Undergraduate</h3>
+          <ul>
+            <li>Submit anonymised scan sets</li>
+            <li>Provide ground-truth PAR scores for training data</li>
+            <li>Track their own submission status</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section-head reveal">
+        <div class="eyebrow" id="security">Security</div>
+        <h2>How access is protected</h2>
+      </div>
+
+      <div class="grid grid-3 reveal">
+        <div class="card">
+          <h3>Authentication</h3>
+          <p>Stateless JWT sessions (HMAC-signed), BCrypt password hashing at cost factor 10.</p>
+        </div>
+        <div class="card">
+          <h3>Authorization</h3>
+          <p>Spring Security URL rules plus method-level <code>@PreAuthorize</code> role checks on nearly every endpoint.</p>
+        </div>
+        <div class="card">
+          <h3>Service-to-service</h3>
+          <p>Backend → ML calls are authenticated with a shared secret header; CORS restricted to known local origins.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= TESTING ============================= -->
+  <section id="testing" class="section">
+    <div class="landmark-field" aria-hidden="true"></div>
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="eyebrow">Testing &amp; Validation</div>
+        <h2>Current test coverage</h2>
+        <p>This reflects what's actually in the repository today — reported plainly rather than overstated.</p>
+      </div>
+
+      <div class="card reveal" style="overflow-x:auto;">
+        <table class="status-table">
+          <thead>
+            <tr><th>Component</th><th>Test Type</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Backend — Security</td>
+              <td>JUnit unit test (<code>JwtUtilTest</code>)</td>
+              <td><span class="badge partial">Partial</span></td>
+            </tr>
+            <tr>
+              <td>Backend — Patient Service</td>
+              <td>JUnit unit tests (<code>PatientServiceTest</code>)</td>
+              <td><span class="badge partial">Partial</span></td>
+            </tr>
+            <tr>
+              <td>Backend — Storage Service</td>
+              <td>JUnit unit test (<code>StorageServiceTest</code>)</td>
+              <td><span class="badge partial">Partial</span></td>
+            </tr>
+            <tr>
+              <td>Frontend</td>
+              <td>No automated test suite in the repository</td>
+              <td><span class="badge none">Not documented</span></td>
+            </tr>
+            <tr>
+              <td>ML Service</td>
+              <td>No automated test suite in the repository</td>
+              <td><span class="badge none">Not documented</span></td>
+            </tr>
+            <tr>
+              <td>CI/CD</td>
+              <td>No GitHub Actions / pipeline configuration found</td>
+              <td><span class="badge none">Not documented</span></td>
+            </tr>
+            <tr>
+              <td>System / Docker</td>
+              <td>Manual verification via <code>docker compose up</code> and container healthchecks</td>
+              <td><span class="badge ok">Manual</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warn reveal" style="margin-top: 24px;">
+        <b>Honest status.</b> Automated testing is currently limited to a handful of backend unit tests. Expanding coverage — particularly for the PAR calculation logic and the ML endpoints — is a natural next step for the project.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= TEAM ============================= -->
+  <!--
+    FUTURE PHOTOS — Team & Supervisor photos
+    Team photos folder: assets/images/team/  (already populated)
+    Supervisor photos folder: assets/images/supervisors/
+    To add a supervisor photo, replace the initials <div class="avatar">AB</div>
+    below with: <div class="avatar"><img src="assets/images/supervisors/asitha.jpg" alt="Photo of Dr. Asitha Bandaranayake" loading="lazy"></div>
+  -->
+  <section id="team" class="section">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="eyebrow">Our Team</div>
+        <h2>Group 10 · CO2060</h2>
+        <p>Department of Computer Engineering, Faculty of Engineering, University of Peradeniya.</p>
+      </div>
+
+      <div class="grid grid-4 reveal" style="margin-bottom: 56px;">
+        <div class="person-card lead">
+          <span class="lead-badge">★ Team Leader</span>
+          <div class="avatar"><img src="assets/images/team/ahamed.jpg" alt="Photo of M.K.H. Ahamed" loading="lazy"></div>
+          <h4>M.K.H. Ahamed</h4>
+          <div class="enum">E/22/014</div>
+          <a class="mail" href="mailto:e22014@eng.pdn.ac.lk">e22014@eng.pdn.ac.lk</a>
+        </div>
+        <div class="person-card">
+          <div class="avatar"><img src="assets/images/team/assadh.jpg" alt="Photo of M.A.M. Assadh" loading="lazy"></div>
+          <h4>M.A.M. Assadh</h4>
+          <div class="enum">E/22/034</div>
+          <a class="mail" href="mailto:e22034@eng.pdn.ac.lk">e22034@eng.pdn.ac.lk</a>
+        </div>
+        <div class="person-card">
+          <div class="avatar"><img src="assets/images/team/ayyash.jpg" alt="Photo of M.F.M. Ayyash" loading="lazy"></div>
+          <h4>M.F.M. Ayyash</h4>
+          <div class="enum">E/22/035</div>
+          <a class="mail" href="mailto:e22035@eng.pdn.ac.lk">e22035@eng.pdn.ac.lk</a>
+        </div>
+        <div class="person-card">
+          <div class="avatar"><img src="assets/images/team/aamir.jpg" alt="Photo of M.N. Aamir" loading="lazy"></div>
+          <h4>M.N. Aamir</h4>
+          <div class="enum">E/22/036</div>
+          <a class="mail" href="mailto:e22036@eng.pdn.ac.lk">e22036@eng.pdn.ac.lk</a>
+        </div>
+      </div>
+
+      <div class="section-head reveal">
+        <div class="eyebrow">Supervisor</div>
+        <h2>Project supervision</h2>
+      </div>
+
+      <div class="grid grid-2 reveal">
+        <div class="person-card">
+          <div class="avatar" style="background:linear-gradient(135deg, var(--violet), var(--coral));">AB</div>
+          <h4>Dr. Asitha Bandaranayake</h4>
+          <span class="role">Supervisor</span>
+          <a class="mail" href="mailto:asithab@eng.pdn.ac.lk">asithab@eng.pdn.ac.lk</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= GALLERY ============================= -->
+  <!--
+    FUTURE PHOTOS — Gallery (Development & Final Demonstration)
+    Folders:
+      assets/images/gallery/        (general/concept images)
+      assets/images/development/    (working sessions, coding, testing)
+      assets/images/ (demo photos also live under development/ or gallery/
+        with data-category="demo" — see the cards below)
+    This grid is built to scale — add as many .media-card blocks as needed
+    inside the matching data-category groups; the filter chips and grid
+    layout already support 3 → 10 → 20+ items with no redesign required.
+    To add a real photo: replace a placeholder card's .media-placeholder
+    block with an <img src="assets/images/development/your-file.jpg" ...>
+    exactly as shown in the System Interface section's comment above.
+  -->
+  <section id="gallery" class="section">
+    <div class="landmark-field" aria-hidden="true"></div>
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="eyebrow">Gallery</div>
+        <h2>Project visuals</h2>
+        <p>A growing collection of concept visuals, development photos, and demonstration coverage. More will be added as the project progresses.</p>
+      </div>
+
+      <div class="filter-bar reveal" role="tablist" aria-label="Gallery categories">
+        <button class="filter-chip active" data-filter="all" type="button">All</button>
+        <button class="filter-chip" data-filter="concept" type="button">Concept</button>
+        <button class="filter-chip" data-filter="development" type="button">Development</button>
+        <button class="filter-chip" data-filter="demo" type="button">Demonstration</button>
+      </div>
+
+      <div class="gallery-grid reveal">
+
+        <!-- Concept — real project graphics -->
+        <div class="media-card" data-category="concept">
+          <div class="media-frame">
+            <img src="assets/images/hero/hero-banner.jpg" alt="Concept graphic: wireframe dental arch with PAR component readouts and technology stack" loading="lazy">
+          </div>
+          <div class="media-caption"><b>Concept Overview</b>PAR components, 3D model info &amp; tech stack</div>
+        </div>
+        <div class="media-card" data-category="concept">
+          <div class="media-frame">
+            <img src="assets/images/gallery/overview-graphic.jpg" alt="Project cover graphic summarising the 3D model viewer, landmark detection, PAR calculation, and security features" loading="lazy">
+          </div>
+          <div class="media-caption"><b>Project Cover</b>Core capabilities at a glance</div>
+        </div>
+
+        <!-- Development — reserved, not yet captured -->
+        <div class="media-card" data-category="development">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              <span class="ph-label">Coding Session</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Coding Session</b>Backend/frontend development in progress</div>
+        </div>
+        <div class="media-card" data-category="development">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span class="ph-label">Team Working Session</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Team Working Session</b>Group planning &amp; design discussion</div>
+        </div>
+        <div class="media-card" data-category="development">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+              <span class="ph-label">Testing &amp; QA</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Testing &amp; QA</b>Manual verification of a system workflow</div>
+        </div>
+        <div class="media-card" data-category="development">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              <span class="ph-label">System Integration</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>System Integration</b>Connecting frontend, backend &amp; ML service</div>
+        </div>
+
+        <!-- Final Demonstration — reserved, not yet captured -->
+        <div class="media-card" data-category="demo">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="7" width="15" height="10" rx="2"/><path d="m22 8-5 4 5 4Z"/></svg>
+              <span class="ph-label">Final Demonstration</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Final Demonstration</b>Live walkthrough of the complete system</div>
+        </div>
+        <div class="media-card" data-category="demo">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2 3 7v6c0 5 3.8 8.7 9 9 5.2-.3 9-4 9-9V7l-9-5Z"/></svg>
+              <span class="ph-label">Project Presentation</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Project Presentation</b>Evaluation / viva presentation</div>
+        </div>
+        <div class="media-card" data-category="demo">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+              <span class="ph-label">Exhibition / Demo Day</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Exhibition / Demo Day</b>Department showcase coverage</div>
+        </div>
+        <div class="media-card" data-category="demo">
+          <div class="media-frame">
+            <div class="media-placeholder">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+              <span class="ph-label">Real System Usage</span>
+              <span class="ph-tag">Coming soon</span>
+            </div>
+          </div>
+          <div class="media-caption"><b>Real System Usage</b>A clinician using the system on a live case</div>
+        </div>
+
+      </div>
+
+      <div class="callout reveal" style="margin-top:24px;">
+        <b>Missing assets.</b> UI screenshots, development photos, and demonstration coverage haven't been captured yet. Every placeholder above marks exactly where that media will go — see the developer notes in <code>index.html</code> for the exact folder and markup to use.
+      </div>
+    </div>
+  </section>
+
+  <!-- Lightbox root — shared by every .media-frame image on the page -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image preview">
+    <button class="lightbox-close" aria-label="Close preview">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <img src="" alt="">
+    <div class="lightbox-caption"></div>
+  </div>
+
+  <!-- ============================= RESOURCES ============================= -->
+  <section id="resources" class="section" style="border-bottom:none;">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="eyebrow">Resources</div>
+        <h2>Documentation &amp; links</h2>
+      </div>
+
+      <div class="grid grid-4 reveal">
+        <div class="resource-card">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+          <h4 style="margin:0;color:#fff;font-size:15px;">GitHub Repository</h4>
+          <p style="margin:0;font-size:13.5px;">Full source code for the frontend, backend, and ML service.</p>
+          <a class="resource-link" href="https://github.com/cepdnaclk/e22-co2060-Web_Based_PAR_Index_System" target="_blank" rel="noopener">View on GitHub →</a>
+        </div>
+        <div class="resource-card">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg></div>
+          <h4 style="margin:0;color:#fff;font-size:15px;">README &amp; Docs</h4>
+          <p style="margin:0;font-size:13.5px;">Installation, API reference, and technical documentation.</p>
+          <a class="resource-link" href="https://github.com/cepdnaclk/e22-co2060-Web_Based_PAR_Index_System#readme" target="_blank" rel="noopener">Read the README →</a>
+        </div>
+        <div class="resource-card">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg></div>
+          <h4 style="margin:0;color:#fff;font-size:15px;">Department Listing</h4>
+          <p style="margin:0;font-size:13.5px;">This project's page on the department's project directory.</p>
+          <a class="resource-link" href="https://projects.ce.pdn.ac.lk/co2060/e22/Web_Based_PAR_Index_System/" target="_blank" rel="noopener">View listing →</a>
+        </div>
+        <div class="resource-card">
+          <div class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5-10-5Z"/><path d="M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/></svg></div>
+          <h4 style="margin:0;color:#fff;font-size:15px;">Department of CE</h4>
+          <p style="margin:0;font-size:13.5px;">Faculty of Engineering, University of Peradeniya.</p>
+          <a class="resource-link" href="http://www.ce.pdn.ac.lk/" target="_blank" rel="noopener">Visit department →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================= FOOTER ============================= -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <span class="brand-mark" aria-hidden="true" style="width:26px;height:26px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3c-3 0-5 2-5 5 0 4 2 6 2 9a3 3 0 0 0 6 0c0-3 2-5 2-9 0-3-2-5-5-5z" stroke="#0b1220" stroke-width="1.6"/></svg>
+          </span>
+          <span>Automated PAR Index Calculation System</span>
+        </div>
+        <p style="max-width:340px;font-size:14px;">Department of Computer Engineering, Faculty of Engineering, University of Peradeniya. A CO2060 web-based software development project.</p>
+      </div>
+      <div>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="#architecture">Architecture</a></li>
+          <li><a href="#ml">AI / ML</a></li>
+          <li><a href="#par-index">PAR Index</a></li>
+          <li><a href="#testing">Testing</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Links</h5>
+        <ul>
+          <li><a href="https://github.com/cepdnaclk/e22-co2060-Web_Based_PAR_Index_System" target="_blank" rel="noopener">GitHub Repository</a></li>
+          <li><a href="https://projects.ce.pdn.ac.lk/co2060/e22/Web_Based_PAR_Index_System/" target="_blank" rel="noopener">Department Project Page</a></li>
+          <li><a href="http://www.ce.pdn.ac.lk/" target="_blank" rel="noopener">Dept. of Computer Engineering</a></li>
+          <li><a href="https://eng.pdn.ac.lk/" target="_blank" rel="noopener">University of Peradeniya</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span id="year">2026</span> Group 10 — CO2060, Dept. of Computer Engineering, University of Peradeniya.</span>
+      <span>Built as an academic project showcase.</span>
+    </div>
+  </div>
+</footer>
+
+<!--
+====================================================================
+  FUTURE PROJECT PHOTOS — DEVELOPER NOTE (not visible to visitors)
+====================================================================
+This site is designed so photos can be added later without any
+redesign. Every image slot on the page follows the same pattern:
+
+  <div class="media-card" data-category="...">
+    <div class="media-frame">
+      <img src="assets/images/<CATEGORY>/<file>.jpg" alt="Describe the image" loading="lazy">
+    </div>
+    <div class="media-caption"><b>Title</b>Short description</div>
+  </div>
+
+To fill a placeholder, find its <div class="media-placeholder">...</div>
+block (search this file for "Coming soon") and replace just that inner
+block with the <img> line above — the card, caption, hover effect, and
+lightbox click-to-zoom all keep working automatically.
+
+Folder map (docs/assets/images/):
+  hero/            Hero / project overview image
+  screenshots/     System Interface screenshots (login, dashboard,
+                    patient management, 3D viewer, landmark detection,
+                    PAR calculation, results)
+  ml/              AI/ML visualizations (input model, detected
+                    landmarks, ML pipeline, prediction result)
+  architecture/    Exported architecture/data-flow/deployment diagrams
+  development/     Working sessions, coding, testing, integration
+  gallery/         General/concept images and anything not covered above
+  team/            Team member photos (already populated)
+  supervisors/     Supervisor photo(s)
+
+Gallery filter chips read each card's data-category attribute
+("concept" | "development" | "demo") — add more categories by adding
+a new .filter-chip button with a matching data-filter value, and
+tagging new .media-card items with the same data-category. No JS
+changes are needed; assets/js/main.js already wires this up generically.
+====================================================================
+-->
+<script src="assets/js/main.js"></script>
+</body>
+</html>

@@ -1,253 +1,84 @@
----
-layout: home
-permalink: index.html
-repository-name: e22-co2060-Web_Based_PAR_Index_System
-title: Automated PAR Index Calculation System
----
+# Automated PAR Index Calculation System — Project Site Source
 
-# Automated PAR Index Calculation System
+This `docs/` folder is the source for the GitHub Pages project showcase:
+**https://cepdnaclk.github.io/e22-co2060-Web_Based_PAR_Index_System/**
 
-<br>
+## Site structure
+
+Static HTML/CSS/JS — no Jekyll build step (see `.nojekyll`):
+
+```text
+docs/
+├── index.html                  # The full project showcase page
+├── assets/
+│   ├── css/style.css           # Design system & component styles
+│   ├── js/main.js              # Nav, scroll reveal, gallery filters, lightbox
+│   └── images/
+│       ├── hero/                # Hero / project overview image
+│       ├── screenshots/         # System Interface screenshots (placeholders)
+│       ├── ml/                  # AI/ML visualizations (placeholders)
+│       ├── architecture/        # Exported architecture diagrams (placeholder)
+│       ├── development/         # Working sessions, coding, testing (placeholders)
+│       ├── gallery/              # General/concept images
+│       ├── team/                 # Team member photos
+│       └── supervisors/          # Supervisor photo(s)
+├── data/                        # Original source images (unedited)
+└── .nojekyll                     # Disables Jekyll processing on GitHub Pages
+```
+
+> This previously used the `cepdnaclk/eYY-project-theme` Jekyll remote theme.
+> It was replaced with a fully custom static site so the project could get a
+> proper visual showcase. For deep technical documentation (installation,
+> API reference, configuration), see the
+> [repository README](https://github.com/cepdnaclk/e22-co2060-Web_Based_PAR_Index_System#readme)
+> — that stays the source of truth for setup and API details.
+
+## Adding a future photo
+
+Every image slot on the page uses the same reusable pattern:
+
+```html
+<div class="media-card" data-category="...">
+  <div class="media-frame">
+    <img src="assets/images/<category>/<file>.jpg" alt="Describe the image" loading="lazy">
+  </div>
+  <div class="media-caption"><b>Title</b>Short description</div>
+</div>
+```
+
+1. Put the photo in the matching `assets/images/<category>/` folder.
+2. Give it a clear filename (e.g. `login-page.jpg`, `demo-day-01.jpg`).
+3. Open `index.html`, search for the section's `<!-- FUTURE PHOTOS -->` comment
+   (there's one above System Interface, Architecture, AI/ML, Team/Supervisor,
+   and Gallery) to find the right placeholder.
+4. Replace that placeholder's `<div class="media-placeholder">…</div>` block
+   with the `<img>` line shown above, using your file's path.
+5. Add a short caption in the existing `.media-caption` block.
+6. Preview locally (`python3 -m http.server 8000` from `docs/`), then commit.
+
+Full step-by-step instructions and the folder map are also kept as an HTML
+comment near the end of `index.html` (search for "FUTURE PROJECT PHOTOS").
+
+The Gallery section additionally supports category filter chips
+(`data-filter` / `data-category="concept|development|demo"`) — add more
+photos to those categories at any time; the grid and filters already scale
+from a few images to 20+ without any redesign.
 
 ## Team
-- E/22/014, M.K.H. Ahamed, [e22014@eng.pdn.ac.lk](mailto:e22014@eng.pdn.ac.lk)
+
+- E/22/014, M.K.H. Ahamed (Team Leader), [e22014@eng.pdn.ac.lk](mailto:e22014@eng.pdn.ac.lk)
 - E/22/034, M.A.M. Assadh, [e22034@eng.pdn.ac.lk](mailto:e22034@eng.pdn.ac.lk)
 - E/22/035, M.F.M. Ayyash, [e22035@eng.pdn.ac.lk](mailto:e22035@eng.pdn.ac.lk)
 - E/22/036, M.N. Aamir, [e22036@eng.pdn.ac.lk](mailto:e22036@eng.pdn.ac.lk)
 
-## Supervisors
+## Supervisor
+
 - Dr. Asitha Bandaranayake, [asithab@eng.pdn.ac.lk](mailto:asithab@eng.pdn.ac.lk)
-- T.M.I.I.C. Thennakoon, [e21407@eng.pdn.ac.lk](mailto:e21407@eng.pdn.ac.lk)
 
----
-
-#### Table of Contents
-1. [Introduction](#introduction)
-2. [Solution Architecture](#solution-architecture)
-3. [Software Designs](#software-designs)
-4. [System Usage & Setup](#system-usage--setup)
-5. [PAR Model Details](#par-model-details)
-6. [Conclusion](#conclusion)
-7. [Links](#links)
-
----
-
-
-# 1. Introduction
-
-## 1.1 Project Overview
-
-The **Automated PAR Index Calculation System** is a web-based clinical tool designed to assist orthodontists in evaluating malocclusion severity using the Peer Assessment Rating (PAR) Index.
-
-The system processes **3D dental models (STL/PLY/OBJ files)** and automatically computes PAR scores using orthodontic landmark detection and geometric measurements.
-
----
-
-## 1.2 Key Features
-
-- Automated PAR score calculation  
-- 3D dental model visualization  
-- Landmark-based measurement system  
-- Role-based user access  
-- Secure authentication using JWT  
-- Patient record management  
-- Training dataset submission support  
-
----
-
-## 1.3 Real-World Problem
-
-Traditional PAR Index calculation:
-
-- Manual and time-consuming  
-- Requires trained clinicians  
-- Prone to inconsistency  
-- Difficult to scale  
-
----
-
-## 1.4 Proposed Solution
-
-This system provides a **fully automated and scalable solution** that:
-
-- Eliminates manual measurements  
-- Ensures consistent scoring  
-- Processes 3D scans efficiently  
-- Supports both clinical and research workflows  
-
----
-
-## 1.5 Impact
-
-### For Clinicians
-- Faster diagnosis  
-- Reduced workload  
-- Improved consistency  
-
-### For Research
-- Enables large-scale data analysis  
-
-### For Healthcare
-- Improves efficiency and reliability  
-
----
-
-# 2. System Overview
-
-### Frontend
-- React + Vite  
-- File upload interface  
-- 3D visualization  
-- Results dashboard  
-
----
-
-### Backend
-- Spring Boot  
-- REST APIs  
-- PAR computation  
-- JWT authentication  
-
----
-
-### Database
-- MySQL 8  
-- Stores users, patients, and results  
-
----
-
-# 3. Software Design
-
-## 3.1 Design Goals
-
-- Accuracy  
-- Scalability  
-- Security  
-- Usability  
-
----
-
-## 3.2 Technology Stack
-
-| Layer | Technology |
-|------|-----------|
-| Frontend | React 18, Vite, Three.js |
-| Backend | Spring Boot 3, Spring Security |
-| Database | MySQL 8, Flyway |
-| Auth | JWT |
-| Container | Docker Compose |
-
----
-
-## 3.3 Functional Modules
-
-### Authentication
-- Login / Registration  
-- JWT session handling  
-
-### File Upload
-- STL/PLY/OBJ support  
-- Validation  
-
-### PAR Calculation
-- Landmark detection  
-- Score computation  
-
-### Visualization
-- 3D model rendering  
-
-### Data Management
-- Save & retrieve patient data  
-
----
-
-# 4. System Usage & Setup
-
-## 4.1 User Roles
-
-| Role | Description |
-|------|------------|
-| ADMIN | Full system control, audit logs, dataset review (pre-seeded only) |
-| ORTHODONTIST | Upload models, calculate PAR, manage patients |
-| UNDERGRADUATE | Submit anonymised training data |
-
----
-
-## 4.2 Quick Start
-
-### Prerequisites
-
-- Docker & Docker Compose  
-- Java 17+  
-- Node.js 20+  
-- MySQL 8  
-
----
-
-### Run with Docker
-
-docker compose up --build
-
-Frontend: http://localhost:5173  
-Backend: http://localhost:8081  
-MySQL: localhost:3306  
-
----
-
-## 4.3 Local Development
-
-### Backend
-
-cd backend  
-./mvnw spring-boot:run  
-
-### Frontend
-
-cd frontend  
-npm install  
-npm run dev  
-
----
-
-## 4.4 Database Setup
-
-Automatic setup via Flyway + Docker scripts.
-
-Manual:
-
-mysql -u root -p par_system < database/schema.sql  
-mysql -u root -p par_system < database/data.sql  
-
----
-
-# 5. PAR Model Details
-
-## 5.1 Components
-
-| Component | Weight |
-|----------|--------|
-| Upper anterior | ×1 |
-| Lower anterior | ×1 |
-| Buccal left | ×1 |
-| Buccal right | ×1 |
-| Overjet | ×6 |
-| Overbite | ×2 |
-| Centreline | ×4 |
-
----
-
-## 5.2 Algorithm
-
-- Rule-based geometric computation  
-- Landmark-driven scoring  
-- British Standard PAR weighting system  
-- Consistent and reproducible results  
-
----
-
-# 6. Links
+## Links
 
 - [Project Repository](https://github.com/cepdnaclk/e22-co2060-Web_Based_PAR_Index_System)
-- [Project Page](https://cepdnaclk.github.io/e22-co2060-Web_Based_PAR_Index_System)
+- [Project Page](https://cepdnaclk.github.io/e22-co2060-Web_Based_PAR_Index_System/)
+- [Department Project Listing](https://projects.ce.pdn.ac.lk/co2060/e22/Web_Based_PAR_Index_System/)
 - [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
 - [University of Peradeniya](https://eng.pdn.ac.lk/)
