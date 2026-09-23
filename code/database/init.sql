@@ -1,5 +1,7 @@
--- Initialize application database and non-root user
-CREATE DATABASE IF NOT EXISTS `par_system`;
-CREATE USER IF NOT EXISTS 'paruser'@'%' IDENTIFIED BY 'HAhamed03@';
-GRANT ALL PRIVILEGES ON `par_system`.* TO 'paruser'@'%';
-FLUSH PRIVILEGES;
+-- Database and user are created automatically by the official MySQL image
+-- via MYSQL_DATABASE / MYSQL_USER / MYSQL_PASSWORD environment variables
+-- (see docker-compose.yml). No credentials belong in this file.
+--
+-- This file is reserved for schema objects that are NOT owned by Flyway
+-- migrations (Flyway handles all table/schema DDL under
+-- code/backend/src/main/resources/db/migration/).
