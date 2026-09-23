@@ -53,7 +53,15 @@ dist/
 .DS_Store
 Thumbs.db
 
+# NOTE: .mvn/ is intentionally NOT ignored here — code/backend/.mvn/wrapper/
+# holds the committed Maven Wrapper config that a fresh clone needs.
+!**/.mvn/
+!**/.mvn/**
+
 # ── Logs ──────────────────────────────────────────────────────────────────
 *.log
 logs/
 spring.log
+backend_logs.txt
+error_log.txt
+jarlist.txt

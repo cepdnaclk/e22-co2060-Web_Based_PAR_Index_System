@@ -13,6 +13,12 @@ target/
 *.jar
 *.war
 
+# Local debug/dev artifacts (never intended to be committed)
+error_log.txt
+jarlist.txt
+backend_logs.txt
+/*_logs.txt
+
 # Uploaded files (local dev storage)
 uploads/
 
