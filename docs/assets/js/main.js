@@ -18,6 +18,23 @@
   document.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
 
+  // Theme toggle (light / dark)
+  function setTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("par-theme", theme);
+    var label = theme === "light" ? "Switch to dark theme" : "Switch to light theme";
+    document.querySelectorAll(".theme-toggle").forEach(function (btn) {
+      btn.setAttribute("aria-label", label);
+    });
+  }
+  document.querySelectorAll(".theme-toggle").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var current = document.documentElement.getAttribute("data-theme") || "dark";
+      setTheme(current === "light" ? "dark" : "light");
+    });
+  });
+  setTheme(document.documentElement.getAttribute("data-theme") || "dark");
+
   // Mobile menu toggle
   if (toggle && mobileMenu) {
     toggle.addEventListener("click", function () {

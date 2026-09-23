@@ -15,7 +15,7 @@ Assert-Command python "Install Python 3.11+."
 Assert-Command npm    "Install Node.js 20+."
 
 $backendDir = Join-Path $root 'backend'
-$mlDir      = Join-Path $root 'ml_engine'
+$mlDir      = Join-Path $root 'ml_service'
 $frontDir   = Join-Path $root 'frontend'
 
 Write-Host 'Building backend...' -ForegroundColor Cyan
