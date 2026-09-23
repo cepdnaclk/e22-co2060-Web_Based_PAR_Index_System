@@ -26,6 +26,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -62,6 +63,10 @@ class TrainingSetControllerTest {
 
     private User admin(long id) {
         return User.builder().id(id).role(User.Role.ADMIN).build();
+    }
+
+    private User undergraduate(long id) {
+        return User.builder().id(id).role(User.Role.UNDERGRADUATE).build();
     }
 
     private List<Model3DFile> allThreeSlots() {
@@ -178,5 +183,53 @@ class TrainingSetControllerTest {
         verify(trainingSetRepository).save(argThat(saved ->
                 saved.getStatus() == TrainingSet.Status.REJECTED));
         verifyNoInteractions(model3DFileRepository);
+    }
+
+    // ── FLAGGED-001: ownership check on delete() ───────────────────────────
+
+    @Test
+    void ownerCanDeleteOwnPendingSubmission() throws Exception {
+        User owner = undergraduate(3L);
+        TrainingSet ts = TrainingSet.builder().id(1L).submittedBy(owner)
+                .status(TrainingSet.Status.PENDING).build();
+        when(trainingSetRepository.findById(1L)).thenReturn(Optional.of(ts));
+
+        mockMvc.perform(delete("/api/v1/training-sets/1")
+                        .with(user(owner)))
+                .andExpect(status().isNoContent());
+
+        verify(trainingSetRepository).deleteById(1L);
+        verify(auditService).log(eq(owner), eq("DELETE_TRAINING_SET"), eq("TrainingSet"), eq(1L), isNull());
+    }
+
+    @Test
+    void nonOwnerUndergraduateCannotDeleteOthersSubmission() throws Exception {
+        User owner = undergraduate(3L);
+        User otherUndergrad = undergraduate(4L);
+        TrainingSet ts = TrainingSet.builder().id(1L).submittedBy(owner)
+                .status(TrainingSet.Status.PENDING).build();
+        when(trainingSetRepository.findById(1L)).thenReturn(Optional.of(ts));
+
+        mockMvc.perform(delete("/api/v1/training-sets/1")
+                        .with(user(otherUndergrad)))
+                .andExpect(status().isForbidden());
+
+        verify(trainingSetRepository, never()).deleteById(any());
+        verifyNoInteractions(auditService);
+    }
+
+    @Test
+    void adminCanDeleteAnyPendingSubmission() throws Exception {
+        User owner = undergraduate(3L);
+        User adminUser = admin(9L);
+        TrainingSet ts = TrainingSet.builder().id(1L).submittedBy(owner)
+                .status(TrainingSet.Status.PENDING).build();
+        when(trainingSetRepository.findById(1L)).thenReturn(Optional.of(ts));
+
+        mockMvc.perform(delete("/api/v1/training-sets/1")
+                        .with(user(adminUser)))
+                .andExpect(status().isNoContent());
+
+        verify(trainingSetRepository).deleteById(1L);
     }
 }

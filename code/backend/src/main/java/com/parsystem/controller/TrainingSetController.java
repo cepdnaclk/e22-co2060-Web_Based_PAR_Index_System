@@ -10,6 +10,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -43,6 +44,11 @@ import java.util.Map;
  *   found" / NoSuchMethodException: <init>(). FIX: removed @RequiredArgsConstructor
  *   entirely — this class needs custom logic in its constructor (resolving baseDir
  *   to an absolute Path), so it keeps the explicit constructor only.
+ *
+ * BUG FIX 4 (FLAGGED-001): delete() previously allowed any UNDERGRADUATE/ADMIN to
+ *            delete any pending training set, not just their own. Now restricted
+ *            to the submission's owner (submittedBy) or an ADMIN, mirroring the
+ *            authorization pattern already used in review().
  */
 @Slf4j
 @RestController
@@ -272,6 +278,11 @@ public class TrainingSetController {
         }
     }
 
+    /**
+     * BUG FIX 4 (FLAGGED-001): now requires the caller to be either the
+     * submission's owner (submittedBy) or an ADMIN. Previously any
+     * UNDERGRADUATE/ADMIN could delete any pending training set.
+     */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('UNDERGRADUATE','ADMIN')")
     public ResponseEntity<Void> delete(
@@ -280,6 +291,11 @@ public class TrainingSetController {
 
         TrainingSet ts = trainingSetRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Training set not found: " + id));
+
+        if (user.getRole() != User.Role.ADMIN &&
+                !ts.getSubmittedBy().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You can only delete your own training set submissions.");
+        }
 
         if (ts.getStatus() != TrainingSet.Status.PENDING) {
             throw new IllegalStateException("Only pending submissions can be deleted.");

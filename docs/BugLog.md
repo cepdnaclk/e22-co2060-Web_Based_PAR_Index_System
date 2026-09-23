@@ -107,38 +107,100 @@ extension-only validation — whichever reflects the actual intended design.
 
 ---
 
-## FLAGGED-001 — `TrainingSetController.delete()` has no ownership check
+## BUG-003 (Low, unfixed) — Missing UI: Case Unfinalize
 
-**Severity:** To be determined — flagged for a design decision, not yet
-classified as a confirmed bug
-**Status:** Open — awaiting decision on intended behavior
-**Found:** Manual inspection of `src/main/java/com/parsystem/controller/TrainingSetController.java`
+**Severity:** Low
+**Status:** Open
+**Found:** While tracing frontend features against backend endpoints for `UserManual.md`
 
 ### Description
 
-`delete()` is restricted by `@PreAuthorize("hasAnyRole('UNDERGRADUATE','ADMIN')")`
-and checks only that the training set's `status` is `PENDING` before deleting
-it. It does **not** check whether the calling user is the submission's actual
-owner (`submittedBy`), the assigned reviewer, or an admin acting deliberately.
+The backend endpoint to unfinalize a case works and is covered by tests
+(`CaseControllerTest`). The frontend API client (`api.js`) has the method
+wired (`unfinalize: (id, reason) => ...`). However, no button or form in the
+UI calls it.
 
-### Impact (if unintended)
+### Impact
 
-Any authenticated user with role `UNDERGRADUATE` can delete **any** other
+Users cannot unfinalize a case through the application; the action is only
+reachable via a direct API call.
+
+### Recommended fix
+
+Add a UI control (e.g. button + reason prompt) wherever finalized cases are
+displayed, wired to the existing `api.js` method.
+
+---
+
+## BUG-004 (Low, unfixed) — Missing UI: Patient Archive/Reactivate
+
+**Severity:** Low
+**Status:** Open
+**Found:** While tracing frontend features against backend endpoints for `UserManual.md`
+
+### Description
+
+`Patient.isArchived` status is displayed (Active/Archived badge) in
+`PatientList` and `PatientDetail`, but no UI control exists to change it.
+
+### Impact
+
+Patients cannot be archived or reactivated through the application UI.
+
+### Recommended fix
+
+Add an archive/reactivate action (button or menu item) in `PatientDetail`
+(and optionally `PatientList`).
+
+---
+
+## RESOLVED-002 (formerly FLAGGED-001) — `TrainingSetController.delete()` had no ownership check
+
+**Severity:** Medium
+**Status:** Resolved — fixed and verified
+**Found:** Manual inspection of `src/main/java/com/parsystem/controller/TrainingSetController.java`
+**Decision:** Confirmed as unintended — restricted to submission owner + admin
+
+### Original issue
+
+`delete()` was restricted by `@PreAuthorize("hasAnyRole('UNDERGRADUATE','ADMIN')")`
+and checked only that the training set's `status` was `PENDING`. It did not
+check whether the calling user was the submission's actual owner
+(`submittedBy`), allowing any UNDERGRADUATE to delete any other
 undergraduate's pending training-set submission, not only their own.
 
-### Why this is not yet classified as a bug
+### Fix applied
 
-It is possible this is intentional (e.g. any undergraduate on the team may be
-expected to manage shared pending submissions). No test was written to lock in
-the current behavior, since doing so would implicitly endorse it without
-confirming intent first.
+Added an ownership check before the existing status check, mirroring the
+pattern already used in `review()`:
 
-### Next step
+```java
+if (user.getRole() != User.Role.ADMIN &&
+        !ts.getSubmittedBy().getId().equals(user.getId())) {
+    throw new AccessDeniedException("You can only delete your own training set submissions.");
+}
+```
 
-Confirm intended behavior. If ownership should be restricted, the fix is to
-add a check (`ts.getSubmittedBy().getId().equals(user.getId()) || isAdmin`)
-before allowing deletion, mirroring the pattern already used in
-`AccessControlService`.
+`TrainingSet.submittedBy` was already a populated `@ManyToOne User` field
+(set on creation via `@PrePersist`/builder), so no schema change was
+required — the fix is contained entirely to `TrainingSetController.delete()`.
+
+`AccessDeniedException` was used (rather than `IllegalArgumentException`) so
+the failure maps to HTTP 403, correctly signaling an authorization failure
+rather than a bad request. Confirmed this mapping works correctly via the
+`nonOwnerUndergraduateCannotDeleteOthersSubmission` test — no changes to the
+exception handler were needed.
+
+### Verification
+
+Three new tests added to `TrainingSetControllerTest`:
+- `ownerCanDeleteOwnPendingSubmission` — owner can still delete their own submission (204 preserved)
+- `nonOwnerUndergraduateCannotDeleteOthersSubmission` — non-owner UNDERGRADUATE gets 403, no delete/audit call occurs
+- `adminCanDeleteAnyPendingSubmission` — ADMIN override still works as before
+
+Confirmed via actual `mvn clean test` output: full suite now **110/110
+tests passing, 0 failures, 0 errors, BUILD SUCCESS** (up from the prior
+107/107 baseline).
 
 ---
 
@@ -179,6 +241,6 @@ deletion) that this had zero effect on the build or test results.
 
 ## Test-pass baseline referenced throughout this log
 
-At time of writing: **107/107 backend tests passing — 0 failures — 0 errors —
+At time of writing: **110/110 backend tests passing — 0 failures — 0 errors —
 BUILD SUCCESS.** This is a pass rate, not a code-coverage measurement; coverage
 has not been measured with a tool such as JaCoCo.
