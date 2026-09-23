@@ -66,7 +66,8 @@ from `code/backend`.
   `MockMvc`, with `@MockBean` for repositories/services and
   `SecurityMockMvcRequestPostProcessors.user(...)` to simulate an
   authenticated principal with a specific role, e.g. `CaseControllerTest`,
-  `TrainingSetControllerTest`, `MLControllerTest`, `FileServeControllerSecurityTest`.
+  `TrainingSetControllerTest`, `MLControllerTest`, `FileServeControllerSecurityTest`,
+  `LandmarkControllerTest`.
 
 ## 4. Test classes and what each covers
 
@@ -83,11 +84,12 @@ from `code/backend`.
 | 9 | `FileServeControllerSecurityTest` | 3 | URL-level role restriction on file downloads, service-layer per-file access denial, successful authorized download |
 | 10 | `JwtAuthFilterTest` | 5 | Authentication gate behavior: no header, malformed header, valid token, invalid/rejected token, unknown user — and confirms the filter never itself blocks a request (always calls `chain.doFilter`) |
 | 11 | `CaseControllerTest` | 8 | Case finalize/unfinalize business rules — cannot finalize without a real, non-zero PAR score; cannot re-finalize; cannot unfinalize without a reason or a currently-finalized case; cannot create a POST-stage case without a finalized PRE-stage case |
-| 12 | `TrainingSetControllerTest` | 9 | Review authorization (assigned reviewer or admin only), `groundTruthPar` range validation, model-file completeness check, confirmation that these checks are scoped to APPROVED reviews only, and — added this round — ownership enforcement on `delete()`: owner can delete their own pending submission, a non-owner UNDERGRADUATE is rejected with 403, and ADMIN retains override to delete any pending submission |
+| 12 | `TrainingSetControllerTest` | 9 | Review authorization (assigned reviewer or admin only), `groundTruthPar` range validation, model-file completeness check, confirmation that these checks are scoped to APPROVED reviews only, and ownership enforcement on `delete()`: owner can delete their own pending submission, a non-owner UNDERGRADUATE is rejected with 403, and ADMIN retains override to delete any pending submission |
 | 13 | `MLControllerTest` | 9 | Per-endpoint role matrix — confirms ORTHODONTIST is allowed on `/status` but blocked on `/metrics` and `/train`, and that `/rollback` is ADMIN-only |
 | 14 | `JwtRoundTripIntegrationTest` | 3 | End-to-end token round trip using the **real** `JwtUtil` and **real** `JwtAuthFilter` together (no mocking of either) — valid token accepted, genuinely expired token rejected, token signed with a different secret rejected |
+| 15 | `LandmarkControllerTest` | 13 | Role gating across all 5 endpoints (`POST`/`GET`/`DELETE /landmarks`, `POST /predict-landmarks`, `POST /auto-calculate`) — UNDERGRADUATE blocked with 403 on every endpoint, ORTHODONTIST/ADMIN allowed through to the service layer; request-body validation on `POST /landmarks` (`@NotNull slot`, `@NotEmpty points`, cascading `@Valid`/`@NotBlank` on each point's `name`) |
 
-**Total: 110 tests across 14 test classes.**
+**Total: 123 tests across 15 test classes.**
 
 ## 5. Notable test cases and what they specifically prove
 
@@ -107,10 +109,17 @@ from `code/backend`.
 - **`TrainingSetControllerTest`** includes a test that a `REJECTED` review
   bypasses the `groundTruthPar`/file-completeness checks entirely (which only
   apply to `APPROVED`), confirmed by asserting `model3DFileRepository` is
-  never even queried in that case. It also now includes a test asserting
+  never even queried in that case. It also includes a test asserting
   that a non-owner UNDERGRADUATE's delete attempt is rejected with HTTP 403
   and that neither `trainingSetRepository.deleteById(...)` nor
   `auditService.log(...)` is invoked in that case.
+- **`LandmarkControllerTest`** closes a gap that existed even though the
+  underlying `GeometricPARService` was already covered at 15/15 — the
+  *controller's own* `@PreAuthorize` rules and `@Valid` request validation
+  had never been exercised at all before this. All 5 endpoints share the
+  same `hasAnyRole('ORTHODONTIST','ADMIN')` rule, so each is tested for the
+  UNDERGRADUATE-blocked case individually, since a copy-pasted annotation on
+  one endpoint provides no guarantee about the others.
 
 ## 6. Expected vs. actual results — history of failures found and resolved
 
@@ -158,3 +167,37 @@ content on disk showed no such contamination.
 with no source changes needed.
 
 ## 7. Final verified result
+
+
+This is the actual output of `mvn test` at time of writing, covering all 15
+test classes above. (110/110 was the baseline prior to this round; 123/123
+reflects the addition of `LandmarkControllerTest`, closing the coverage gap
+previously noted in §8's "Scope not yet covered" list — `LandmarkController`'s
+own authorization/validation behavior had never been separately tested even
+though the underlying `GeometricPARService` was already covered at 15/15.)
+
+## 8. Limitations
+
+- **This is a test pass rate, not a code coverage measurement.** No coverage
+  tool (e.g. JaCoCo) has been run against this codebase. "123/123 passing"
+  says every written test currently succeeds; it does not say what fraction
+  of the codebase those tests actually exercise.
+- **Scope not yet covered by dedicated tests:**
+  - `MLClientService`/`MlPredictionService`'s communication with the external
+    ML service (FastAPI) beyond what was incidentally observed during the
+    stray-file investigation recorded in `BugLog.md`.
+  - `AuditService` was reviewed and found to be a single-method, no-branching
+    pass-through (build an `AuditLog`, save it); it was deliberately not
+    given its own test class, since it is already implicitly exercised by
+    every other test that verifies `auditService.log(...)` was called with
+    correct arguments, and a dedicated test would mostly test Mockito's own
+    mechanics rather than catch anything meaningful.
+  - Docker/deployment configuration, beyond the JWT secret fallback already
+    documented in `BugLog.md` and `SecurityReview.md`.
+- **Known, deliberately unresolved findings** (see `BugLog.md` for full
+  detail): a confirmed hardcoded JWT secret fallback (not fixed pending a
+  deliberate deployment-impact review), a dead MIME-validation constant in
+  `StorageService`, and two missing-UI findings (case unfinalize, patient
+  archive/reactivate). The `TrainingSetController.delete()` ownership gap and
+  the hardcoded live credentials in `config.txt`/`init.sql` have both been
+  resolved — see `BugLog.md` RESOLVED-002 and RESOLVED-003.

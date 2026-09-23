@@ -154,6 +154,90 @@ Add an archive/reactivate action (button or menu item) in `PatientDetail`
 
 ---
 
+## RESOLVED-003 (formerly BUG-005) — Hardcoded, committed live credentials in `config.txt` and `init.sql`
+
+**Severity:** High
+**Status:** Resolved — rotated and verified
+**Found:** Manual inspection while writing `docs/DeveloperGuide.md`
+
+### Description
+
+Two files in the public repository contained real, usable credentials, not
+placeholders or examples:
+
+1. **`code/config.txt`** — a plaintext dump of `docker compose config`
+   output, containing the actual values of `DB_PASSWORD`, `JWT_SECRET`, and
+   `ML_SERVICE_SECRET` as they were configured at the time it was generated
+   and committed.
+2. **`code/database/init.sql`** — created the MySQL user `paruser` with a
+   hardcoded plaintext password directly in the SQL, rather than sourcing it
+   from an environment variable at runtime.
+
+### Impact
+
+Unlike `BUG-001` (a fallback that only activates if `JWT_SECRET` is unset),
+these were **live secrets exposed at the time of discovery** in a public
+repository. Anyone who had cloned, forked, or viewed the repo had access to:
+- The database password (`DB_PASSWORD`, used as the MySQL root password —
+  `paruser` itself turned out to be unused by the running application; see
+  Investigation below).
+- The JWT signing secret (allowing forged tokens, including forged
+  `ROLE_ADMIN` claims, identical in effect to exploiting BUG-001 but with a
+  guaranteed-valid secret instead of a hopeful fallback).
+- The ML-service shared secret (`X-ML-Service-Key`), allowing unauthenticated
+  calls to the ML service's `/predict`, `/train`, and `/rollback` endpoints
+  as if they were the backend.
+
+### Investigation
+
+Inspecting `docker-compose.yml` showed `paruser` (created by `init.sql`) was
+never actually used — `par-backend` and `par-ml` both connect to MySQL as
+`root`, authenticated via `MYSQL_ROOT_PASSWORD`/`DB_PASSWORD`. So the one
+credential that actually mattered operationally was `DB_PASSWORD` (the root
+password), not the `paruser` password — though both were hardcoded and both
+needed to go.
+
+### Fix applied
+
+- `DB_PASSWORD` (MySQL root password), `JWT_SECRET`, and `ML_SERVICE_SECRET`
+  all rotated to newly generated values (`openssl rand -base64`).
+- `code/database/init.sql` emptied — the unused `paruser` account and its
+  hardcoded password removed entirely; the app continues to connect as
+  MySQL root via `MYSQL_ROOT_PASSWORD` (env-sourced), which was already the
+  actual runtime behavior.
+- `code/docker-compose.yml` updated to drop the now-unnecessary `init.sql`
+  bind-mount on the `mysql` service.
+- `code/config.txt` removed from the repository and added to `.gitignore`
+  (commit `54892fc`, pushed to `main`).
+
+### Verification
+
+- MySQL data volume wiped and reseeded fresh (`docker compose down -v`) so
+  the new root password took effect immediately, rather than requiring an
+  in-place `ALTER USER`.
+- Full stack (`mysql`, `par-backend`, `par-ml`, `par-frontend`) rebuilt via
+  `docker compose up --build` and confirmed running with all three rotated
+  secrets — login, patient/case retrieval (backend↔MySQL), and the ML
+  service's `/health` endpoint all verified working post-rotation.
+- `par-ml`'s host port was moved from `8000` to `8002` in
+  `docker-compose.yml` during this work, due to an unrelated local port
+  conflict with another project's container — internal
+  container-to-container traffic (`ML_SERVICE_URL: http://par-ml:8000`) was
+  unaffected since only the host-side mapping changed.
+
+### Known residual risk (not yet addressed)
+
+The *old*, now-inactive secret values (including the old `paruser` password)
+remain visible in earlier git commits and are recoverable via `git log`/
+`git show` unless history is separately rewritten. Rotation neutralizes the
+live exposure — the old values no longer grant access to anything — but
+does not remove them from history. Scrubbing history
+(`git filter-repo`/BFG Repo-Cleaner + force-push) is a more invasive,
+separate action, intentionally not done as part of this fix; revisit if full
+historical removal is wanted.
+
+---
+
 ## RESOLVED-002 (formerly FLAGGED-001) — `TrainingSetController.delete()` had no ownership check
 
 **Severity:** Medium

@@ -809,6 +809,11 @@
               <td><span class="badge ok">Tested</span></td>
             </tr>
             <tr>
+              <td>Backend — Landmark Placement</td>
+              <td>MockMvc controller tests (<code>LandmarkControllerTest</code>) — role gating across all 5 endpoints, request-body validation</td>
+              <td><span class="badge ok">Tested</span></td>
+            </tr>
+            <tr>
               <td>Backend — Patient Service</td>
               <td>JUnit unit tests (<code>PatientServiceTest</code>)</td>
               <td><span class="badge partial">Partial</span></td>
@@ -858,7 +863,7 @@
       </div>
 
       <div class="callout warn reveal" style="margin-top: 24px;">
-        <b>Honest status.</b> All three PAR-scoring pathways — manual entry, geometric auto-calculation from confirmed landmarks, and ML prediction — have been manually tested end-to-end and confirmed working. The backend now carries 100+ automated JUnit/MockMvc tests covering authentication, case lifecycle, training-set review, and ML endpoint authorization, all passing. Frontend and ML-service automated coverage is still a natural next step for the project.
+        <b>Honest status.</b> All three PAR-scoring pathways — manual entry, geometric auto-calculation from confirmed landmarks, and ML prediction — have been manually tested end-to-end and confirmed working. The backend carries 123 automated JUnit/MockMvc tests across 15 classes, all passing — covering authentication, case lifecycle, training-set review and ownership, ML endpoint authorization, and landmark-placement access control. Frontend and ML-service automated coverage is still a natural next step for the project.
       </div>
     </div>
   </section>
