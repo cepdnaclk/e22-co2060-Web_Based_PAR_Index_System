@@ -780,8 +780,33 @@
           <tbody>
             <tr>
               <td>Backend — Security</td>
-              <td>JUnit unit test (<code>JwtUtilTest</code>)</td>
-              <td><span class="badge partial">Partial</span></td>
+              <td>JUnit unit &amp; integration tests (<code>JwtUtilTest</code>, <code>JwtAuthFilterTest</code>, <code>JwtRoundTripIntegrationTest</code>, <code>AccessControlServiceTest</code>)</td>
+              <td><span class="badge ok">Tested</span></td>
+            </tr>
+            <tr>
+              <td>Backend — Case Lifecycle</td>
+              <td>MockMvc controller tests (<code>CaseControllerTest</code>) — finalize/unfinalize, PRE→POST case rules</td>
+              <td><span class="badge ok">Tested</span></td>
+            </tr>
+            <tr>
+              <td>Backend — Training Set Workflow</td>
+              <td>MockMvc controller tests (<code>TrainingSetControllerTest</code>) — review validation, reviewer authorization</td>
+              <td><span class="badge ok">Tested</span></td>
+            </tr>
+            <tr>
+              <td>Backend — ML Endpoints</td>
+              <td>MockMvc controller tests (<code>MLControllerTest</code>) — per-endpoint role matrix</td>
+              <td><span class="badge ok">Tested</span></td>
+            </tr>
+            <tr>
+              <td>Backend — Auth Service</td>
+              <td>JUnit unit tests (<code>AuthServiceTest</code>)</td>
+              <td><span class="badge ok">Tested</span></td>
+            </tr>
+            <tr>
+              <td>Backend — File Serving</td>
+              <td>MockMvc security tests (<code>FileServeControllerSecurityTest</code>)</td>
+              <td><span class="badge ok">Tested</span></td>
             </tr>
             <tr>
               <td>Backend — Patient Service</td>
@@ -790,8 +815,8 @@
             </tr>
             <tr>
               <td>Backend — Storage Service</td>
-              <td>JUnit unit test (<code>StorageServiceTest</code>)</td>
-              <td><span class="badge partial">Partial</span></td>
+              <td>JUnit unit tests (<code>StorageServiceTest</code>) — file validation, path-traversal guard</td>
+              <td><span class="badge ok">Tested</span></td>
             </tr>
             <tr>
               <td>PAR Calculation — Manual Entry</td>
@@ -833,7 +858,7 @@
       </div>
 
       <div class="callout warn reveal" style="margin-top: 24px;">
-        <b>Honest status.</b> All three PAR-scoring pathways — manual entry, geometric auto-calculation from confirmed landmarks, and ML prediction — have been manually tested end-to-end and confirmed working. Automated test coverage beyond that is currently limited to a handful of backend unit tests; expanding it (particularly for the ML endpoints and frontend) is a natural next step for the project.
+        <b>Honest status.</b> All three PAR-scoring pathways — manual entry, geometric auto-calculation from confirmed landmarks, and ML prediction — have been manually tested end-to-end and confirmed working. The backend now carries 100+ automated JUnit/MockMvc tests covering authentication, case lifecycle, training-set review, and ML endpoint authorization, all passing. Frontend and ML-service automated coverage is still a natural next step for the project.
       </div>
     </div>
   </section>
@@ -856,6 +881,7 @@
 
       <div class="grid grid-4 reveal" style="margin-bottom: 56px;">
         <div class="person-card lead">
+          <span class="lead-badge">Team Leader</span>
           <div class="avatar"><img src="assets/images/team/ahamed.jpg" alt="Photo of M.K.H. Ahamed" loading="lazy"></div>
           <h4>M.K.H. Ahamed</h4>
           <div class="enum">E/22/014</div>
@@ -882,7 +908,7 @@
       </div>
 
       <div class="section-head reveal">
-        <div class="eyebrow">Supervisor</div>
+        <div class="eyebrow">Supervisors</div>
         <h2>Project supervision</h2>
       </div>
 
@@ -892,6 +918,11 @@
           <h4>Dr. Asitha Bandaranayake</h4>
           <span class="role">Supervisor</span>
           <a class="mail" href="mailto:asithab@eng.pdn.ac.lk">asithab@eng.pdn.ac.lk</a>
+        </div>
+        <div class="person-card">
+          <div class="avatar" style="background:linear-gradient(135deg, var(--violet), var(--coral));">HR</div>
+          <h4>Dr. H.S.K. Ratnatilake</h4>
+          <span class="role">Supervisor</span>
         </div>
       </div>
     </div>
