@@ -168,13 +168,59 @@ with no source changes needed.
 
 ## 7. Final verified result
 
-
 This is the actual output of `mvn test` at time of writing, covering all 15
 test classes above. (110/110 was the baseline prior to this round; 123/123
 reflects the addition of `LandmarkControllerTest`, closing the coverage gap
 previously noted in §8's "Scope not yet covered" list — `LandmarkController`'s
 own authorization/validation behavior had never been separately tested even
 though the underlying `GeometricPARService` was already covered at 15/15.)
+
+**Re-verified 2026-09-24** (`mvn clean test`, Windows, Java 17.0.17, Maven via
+the committed wrapper) — full clean rebuild, not a cached/incremental run:
+
+```
+[INFO] Running com.parsystem.controller.CaseControllerTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.parsystem.controller.FileServeControllerSecurityTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.parsystem.controller.LandmarkControllerTest
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.parsystem.controller.MLControllerTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.parsystem.controller.TrainingSetControllerTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.parsystem.entity.PARScoreTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.parsystem.security.JwtAuthFilterTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.parsystem.security.JwtRoundTripIntegrationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.parsystem.security.JwtUtilTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.parsystem.service.AccessControlServiceTest
+[INFO] Tests run: 28, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.parsystem.service.AuthServiceTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.parsystem.service.GeometricPARServiceTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.parsystem.service.PARCalculatorServiceTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.parsystem.service.PatientServiceTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Running com.parsystem.service.StorageServiceTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+
+[INFO] Results:
+[INFO] Tests run: 123, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+[INFO] Total time:  19.845 s
+```
+
+Two pre-existing Lombok `@Builder` warnings on `LandmarkPoint.java` (fields
+with an initializer that `@Builder` silently ignores) and one deprecation
+notice in `MLService.java` were emitted during compilation — both are
+warnings, not failures, and don't affect this result. Worth a cleanup pass
+if time allows, but not blocking for Milestone 4.
 
 ## 8. Limitations
 
