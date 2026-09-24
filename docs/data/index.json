@@ -3,7 +3,8 @@
         {
             "name": "M. K. H. Ahamed",
             "email": "e22014@eng.pdn.ac.lk",
-            "eNumber": "E/22/014"
+            "eNumber": "E/22/014",
+            "role": "Team Leader"
         },
         {
             "name": "M. A. M. Assadh",
@@ -25,6 +26,9 @@
         {
             "name": "Dr. Asitha Bandaranayake",
             "email": "asithab@eng.pdn.ac.lk"
+        },
+        {
+            "name": "Dr. H.S.K. Ratnatilake"
         }
     ],
     "tags": ["Web", "Software Systems", "CO2060"],
