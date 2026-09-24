@@ -363,7 +363,12 @@ ML_SERVICE_SECRET=<a separate random secret shared between backend and ML servic
 | `JWT_SECRET` | par-backend | Signs/verifies JWTs (`app.jwt.secret`); must Base64-decode to ≥32 bytes |
 | `ML_SERVICE_SECRET` | par-backend, par-ml | Shared secret sent as the `X-ML-Service-Key` header on every backend→ML call |
 
-> `database/init.sql` also creates a secondary `paruser` MySQL account with a password hardcoded in that file. Treat that value as compromised in any real deployment and rotate it — do not reuse it.
+> **Note:** `database/init.sql` no longer creates any hardcoded database
+> account — MySQL's official image creates the database/user entirely
+> from the `MYSQL_DATABASE`/`MYSQL_ROOT_PASSWORD` environment variables in
+> `docker-compose.yml` (see the file's own header comment). Schema DDL is
+> owned by Flyway migrations under
+> `code/backend/src/main/resources/db/migration/`.
 
 ### 3. Start the stack with Docker Compose
 

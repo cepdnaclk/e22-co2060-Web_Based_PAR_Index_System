@@ -135,7 +135,7 @@ exact pinned versions.
 | `app/main.py` | FastAPI app, middleware, all routes |
 | `app/core/config.py` | `Settings` (pydantic-settings) — all config from `.env`, nothing hardcoded |
 | `app/core/model_store.py` | Loads/saves/rolls back the `.pt` model file |
-| `app/core/landmark_detector.py` | Geometric landmark auto-detection from mesh point clouds |
+| `app/core/landmark_detector.py` | Geometric landmark auto-detection from mesh point clouds — see [`LandmarkDetectorFixHistory.md`](LandmarkDetectorFixHistory.md) for the debugging history behind its axis-detection, outlier-removal, and coordinate-space logic before changing it |
 | `dataset_preprocessor.py` | Offline script: reads `APPROVED` training sets from MySQL, builds `.pt` tensors under `data/preprocessed/` |
 
 **Endpoints** (`app/main.py`):

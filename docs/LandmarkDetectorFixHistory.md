@@ -1,4 +1,15 @@
-# Landmark detection — fix summary
+# Landmark Detector — Fix History
+
+> **What this file is:** a chronological debugging log of real bugs found
+> and fixed in `code/ml_service/app/core/landmark_detector.py` across
+> several rounds — axis-detection, coordinate-space mismatches, outlier
+> handling, and left/right mirroring. It is **not** a setup guide — for
+> that, see [`DeveloperGuide.md`](DeveloperGuide.md). This file was
+> previously (incorrectly) named `code/README.md`, which could be mistaken
+> for project setup instructions; it has been moved and renamed here for
+> that reason, with its content otherwise unchanged.
+
+## Fix summary
 
 Your project already had almost everything built. These files close the
 actual gap: a real geometric landmark-detection endpoint, 3 wiring bugs
