@@ -1,7 +1,17 @@
--- Database and user are created automatically by the official MySQL image
--- via MYSQL_DATABASE / MYSQL_USER / MYSQL_PASSWORD environment variables
--- (see docker-compose.yml). No credentials belong in this file.
+-- Intentionally empty.
 --
--- This file is reserved for schema objects that are NOT owned by Flyway
--- migrations (Flyway handles all table/schema DDL under
--- code/backend/src/main/resources/db/migration/).
+-- The application connects to MySQL as root, using MYSQL_ROOT_PASSWORD
+-- (see docker-compose.yml, sourced from DB_PASSWORD in .env). No separate
+-- application-level database user (e.g. the previously-defined `paruser`)
+-- is actually used by par-backend or par-ml — both connect as root — so
+-- this file no longer creates one.
+--
+-- Previously this file hardcoded a plaintext password for an unused
+-- `paruser` account directly in committed source (see docs/BugLog.md,
+-- BUG-005). That account and its bind-mount into
+-- docker-entrypoint-initdb.d have been removed.
+--
+-- Schema/table DDL is owned entirely by Flyway migrations under
+-- code/backend/src/main/resources/db/migration/ — nothing belongs in
+-- this file unless it is genuinely outside Flyway's scope (e.g. one-time
+-- server-level MySQL configuration that isn't a schema change).
